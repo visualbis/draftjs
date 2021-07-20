@@ -1,17 +1,23 @@
 {
   "compilerOptions": {
-    "esModuleInterop": true,
-    "jsx": "react",
-    "module": "esnext",
-    "moduleResolution": "node",
-    "lib": [
-      "dom",
-      "esnext"
-    ],
-    "sourceMap": true,
-    "target": "esnext",
+      "jsx": "react",
+      "outDir": "./dist",
+      "sourceMap": false,
+      "noImplicitAny": false,
+      "target": "es6",
+      "emitDecoratorMetadata": true,
+      "esModuleInterop": true,
+      "allowSyntheticDefaultImports": true,
+      "moduleResolution": "node",
+      "experimentalDecorators": true,
+      "lib": ["dom", "DOM.Iterable", "es2015", "es7"],
+      "declaration": true,
+      "rootDir": "./src"
   },
-  "exclude": [
+  "files": [
+    "./src/DraftEditor.tsx"
+],
+"exclude": [
     "node_modules"
-  ]
+]
 }

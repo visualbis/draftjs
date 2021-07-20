@@ -7,6 +7,7 @@ import 'draft-js/dist/Draft.css';
 import draftToHtml from 'draftjs-to-html';
 import React, { forwardRef, useImperativeHandle, useRef, useState } from 'react';
 import DraftToolbar, { IDraftElementFormats } from './DraftToolbar/DraftToolbar';
+import './Styles';
 
 interface IDraftEditorProps {
     initialContent: string;
