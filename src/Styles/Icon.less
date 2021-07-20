@@ -1,0 +1,35 @@
+/* 
+  Icon.less 
+  - Includes all Icon styles
+*/
+
+@font-face {
+    font-family: 'FabricMDL2Icons';
+    src: url('fabric-icons.woff') format('woff');
+  }
+  
+  .ms-Icon {
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-font-smoothing: antialiased;
+    display: inline-block;
+    font-family: 'FabricMDL2Icons' !important;
+    font-style: normal;
+    font-weight: normal;
+    font-size: 12px;
+  }
+
+  
+  .test{
+    width: 15px;
+    height: 15px;
+    background-image: url("../Fonts/stepped.svg");
+    background-repeat: no-repeat;
+}
+  
+  .ms-Icon--Bold:before { content: "\E8DD"; }
+  .ms-Icon--BucketColor:before { content: "\F1B6"; }
+  .ms-Icon--FontColorA:before { content: "\F4EC"; }
+  .ms-Icon--Italic:before { content: "\E8DB"; }
+  .ms-Icon--Subscript:before { content: "\EDDF"; }
+  .ms-Icon--Superscript:before { content: "\EDDE"; }
+  .ms-Icon--Underline:before { content: "\E8DC"; }

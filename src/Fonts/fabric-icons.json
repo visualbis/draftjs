@@ -1,0 +1,38 @@
+{
+  "fontName": "fabric-icons",
+  "fontFamilyName": "FabricMDL2Icons",
+  "excludeGlyphs": false,
+  "excludeThirdPartyIcons": false,
+  "chunkSubsets": false,
+  "hashFontFileName": true,
+  "glyphs": [
+    {
+      "name": "Bold",
+      "unicode": "E8DD"
+    },
+    {
+      "name": "BucketColor",
+      "unicode": "F1B6"
+    },
+    {
+      "name": "FontColorA",
+      "unicode": "F4EC"
+    },
+    {
+      "name": "Italic",
+      "unicode": "E8DB"
+    },
+    {
+      "name": "Subscript",
+      "unicode": "EDDF"
+    },
+    {
+      "name": "Superscript",
+      "unicode": "EDDE"
+    },
+    {
+      "name": "Underline",
+      "unicode": "E8DC"
+    }
+  ]
+}
