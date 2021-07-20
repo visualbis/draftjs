@@ -1,3 +1,3 @@
-import './ToolbarButton.less';
-import './DraftEditor.less';
-import './Icon.less';
+import '../css/ToolbarButton.css';
+import '../css/DraftEditor.css';
+import '../css/Icon.css';

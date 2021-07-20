@@ -1,8 +1,6 @@
 import { useState } from "react";
 import React from "react";
 import DraftEditor from "./DraftEditor";
-import './Styles';
-// import '../src/Styles/Icon.css'
 
 
 export const App = () => {
