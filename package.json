@@ -48,7 +48,7 @@
     "gulp-sass": "4.1.1",
     "gulp-less": "4.0.1",
     "gulp-typescript": "5.0.1",
-    "del": "4.1.1",
+    "del": "6.0.0",
     "source-map-loader": "3.0.0"
   }
 }
