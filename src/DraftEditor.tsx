@@ -1,20 +1,19 @@
-import { default as Editor, default as PluginEditor } from '@draft-js-plugins/editor';
-import createToolbarPlugin from '@draft-js-plugins/static-toolbar';
-import '@draft-js-plugins/static-toolbar/lib/plugin.css';
+import { default as Editor } from '@draft-js-plugins/editor';
 import { InlineCreators, stateFromHTML } from '@shelterzoom/draft-js-import-html';
 import { convertToRaw, DraftInlineStyle, DraftStyleMap, EditorState, Modifier, RichUtils } from 'draft-js';
 import 'draft-js/dist/Draft.css';
 import draftToHtml from 'draftjs-to-html';
-import React, { forwardRef, useImperativeHandle, useRef, useState } from 'react';
+import React, { Component, Fragment } from 'react';
 import DraftToolbar, { IDraftElementFormats } from './DraftToolbar/DraftToolbar';
 import './Styles';
 
 interface IDraftEditorProps {
-    initialContent: string;
+    initialContent?: string;
     textAlignment?: string;
-    onContentChange: (content: string) => void;
+    onContentChange?: (content: string) => void;
     onCurrentFormatChange?: (formats: IDraftElementFormats) => void;
     showToolbar?: boolean;
+    innerRef?: any
 }
 
 export interface IDraftEditorRef {
@@ -36,7 +35,7 @@ const CUSTOM_STYLE_MAP: DraftStyleMap = {
 const resolveCustomStyleMap = (style: DraftInlineStyle) => {
     const colObj = {} as React.CSSProperties;
     style.forEach((styleKey) => {
-        if(styleKey){
+        if (styleKey) {
             if (styleKey.includes('color-')) {
                 const [, color] = styleKey.split('color-');
                 colObj.color = color;
@@ -95,7 +94,7 @@ const getFormat = (editorStateData: EditorState) => {
         superScript: style.has('SUPERSCRIPT'),
     };
     style.forEach((styleKey) => {
-        if(styleKey){
+        if (styleKey) {
             if (styleKey.includes('color-')) {
                 const [, color] = styleKey.split('color-');
                 format.color = color;
@@ -126,7 +125,7 @@ const formatText = (editorState: EditorState, formatType: string, value: string)
     const currentStyleBefore = editorState.getCurrentInlineStyle();
 
     currentStyleBefore.forEach((color) => {
-        if (color &&color.includes(`${formatType}-`)) {
+        if (color && color.includes(`${formatType}-`)) {
             contentState = Modifier.removeInlineStyle(contentState, selection, color);
         }
     });
@@ -136,7 +135,7 @@ const formatText = (editorState: EditorState, formatType: string, value: string)
     const currentStyle = editorState.getCurrentInlineStyle();
     if (selection.isCollapsed()) {
         nextEditorState = currentStyle.reduce(
-            (state, color) =>  RichUtils.toggleInlineStyle(state, color),
+            (state, color) => RichUtils.toggleInlineStyle(state, color),
             nextEditorState,
         );
     }
@@ -151,89 +150,84 @@ const getContentFromEditorState = (editorStateUpdated: EditorState) => {
     return draftToHtml(rawContentState);
 };
 
-const DraftEditor: React.ForwardRefRenderFunction<IDraftEditorRef, IDraftEditorProps> = (
-    { initialContent, textAlignment, onContentChange, onCurrentFormatChange, showToolbar }: IDraftEditorProps,
-    ref,
-) => {
-    const [editorState, setEditorState] = useState(getEditorStateFromContent(initialContent));
-    const [currentFormat, setCurrentFormat] = useState(null);
-    const [{ plugins, Toolbar }] = useState(() => {
-        const toolbarPlugin = createToolbarPlugin();
-        const { Toolbar: ToolbarInstance } = toolbarPlugin;
-        const pluginsArray = [toolbarPlugin];
-        return {
-            plugins: pluginsArray,
-            Toolbar: ToolbarInstance,
-        };
-    });
+class DraftEditor extends Component<IDraftEditorProps, any> {
 
-    const editorRef = useRef<PluginEditor>(null);
+    constructor(props: IDraftEditorProps) {
+        super(props);
+        const { initialContent } = props;
+        this.state = {
+            editorState: getEditorStateFromContent(initialContent),
+            currentFormat: null,
+        }
+    }
 
-    const sendFormat = (nextEditorState: EditorState) => {
+
+    sendFormat = (nextEditorState: EditorState) => {
+        const { onCurrentFormatChange } = this.props;
         const format = getFormat(nextEditorState);
-        setCurrentFormat(format);
+        this.setState({
+            format
+        });
         onCurrentFormatChange?.(format);
     };
 
-    useImperativeHandle(
-        ref,
-        () => ({
-            setContent(content: string) {
-                const updatedEditorState = getEditorStateFromContent(content);
-                updateData(updatedEditorState);
-                return getContentFromEditorState(updatedEditorState);
-            },
-            setFormat,
-        }),
-        [setEditorState, editorState],
-    );
+    setContent = (content: string) => {
+        const updatedEditorState = getEditorStateFromContent(content);
+        this.updateData(updatedEditorState);
+        return getContentFromEditorState(updatedEditorState);
+    };
 
-    const setFormat = (formatType: string, value: string) => {
+    setFormat = (formatType: string, value: string) => {
         let nextEditorState = null;
+        const { editorState } = this.state;
         if (['fontfamily', 'color', 'fontsize', 'backgroundColor'].includes(formatType)) {
             nextEditorState = formatText(editorState, formatType, `${formatType}-${value}`);
         } else nextEditorState = RichUtils.toggleInlineStyle(editorState, formatType.toUpperCase());
-        updateData(nextEditorState);
-        // editorRef.current.focus();
+        this.updateData(nextEditorState);
     };
 
-    const onEditorStateChange = (editorStateUpdated: EditorState) => {
-        updateData(editorStateUpdated);
+    onEditorStateChange = (editorStateUpdated: EditorState) => {
+        this.updateData(editorStateUpdated);
     };
 
-    const updateData = (editorStateUpdated: EditorState) => {
-        setEditorState(editorStateUpdated);
+    updateData = (editorStateUpdated: EditorState) => {
+        const { onContentChange } = this.props;
+        this.setState({
+            editorState: editorStateUpdated,
+        });
         const markup = getContentFromEditorState(editorStateUpdated);
         onContentChange?.(markup);
-        sendFormat(editorStateUpdated);
+        this.sendFormat(editorStateUpdated);
     };
 
-    const handleKeyCommand = (command: string, editorStateUpdated: EditorState) => {
+    handleKeyCommand = (command: string, editorStateUpdated: EditorState) => {
         const newState = RichUtils.handleKeyCommand(editorStateUpdated, command);
         if (newState) {
-            updateData(newState);
+            this.updateData(newState);
             return 'handled';
         }
         return 'not-handled';
     };
 
-    return (
-        <>
-            {showToolbar && <DraftToolbar currentFormat={currentFormat} setFormat={setFormat} />}
-            <Editor
-                ref={editorRef}
-                customStyleFn={resolveCustomStyleMap}
-                preserveSelectionOnBlur
-                stripPastedStyles
-                editorState={editorState}
-                onChange={onEditorStateChange}
-                textAlignment={textAlignment as any}
-                handleKeyCommand={handleKeyCommand}
-                customStyleMap={CUSTOM_STYLE_MAP}
-                plugins={plugins}
-            />
-        </>
-    );
+    render() {
+        const { textAlignment, showToolbar } = this.props;
+        const { editorState, currentFormat } = this.state;
+        return (
+            <Fragment>
+                {showToolbar && <DraftToolbar currentFormat={currentFormat} setFormat={this.setFormat} />}
+                <Editor
+                    customStyleFn={resolveCustomStyleMap}
+                    preserveSelectionOnBlur
+                    stripPastedStyles
+                    editorState={editorState}
+                    onChange={this.onEditorStateChange}
+                    textAlignment={textAlignment as any}
+                    handleKeyCommand={this.handleKeyCommand}
+                    customStyleMap={CUSTOM_STYLE_MAP}
+                />
+            </Fragment>
+        );
+    }
 };
 
-export default forwardRef(DraftEditor);
+export default DraftEditor;
