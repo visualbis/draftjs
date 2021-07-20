@@ -1,5 +1,5 @@
 {
-  "name": "draftEditor",
+  "name": "@visualbi/drafteditor",
   "version": "1.0.0",
   "description": "for creating custom style format",
   "main": "index.js",
