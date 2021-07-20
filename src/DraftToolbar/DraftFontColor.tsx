@@ -1,5 +1,5 @@
 import { AdvancedColorPicker } from '@visualbi/bifrost-ui/dist/react/forms/AdvancedColorPicker';
-import React, { useRef } from 'react';
+import React from 'react';
 import { IDraftToolbarProps } from './DraftToolbar';
 
 interface IDraftFontColorProps {
@@ -10,7 +10,6 @@ const DraftFontColor = (props: IDraftFontColorProps) => {
     const {
         formatProps: { setFormat, currentFormat },
     } = props;
-    const draftFontColorRef = useRef(null);
 
     const onChange = (values: string) => {
         setFormat('color', values);
@@ -18,7 +17,6 @@ const DraftFontColor = (props: IDraftFontColorProps) => {
 
     return (
         <AdvancedColorPicker
-            ref={draftFontColorRef}
             // className={` fontColorIcon`}
             isCompositeButton
             isSVGIcon
