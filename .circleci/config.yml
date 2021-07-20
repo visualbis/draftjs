@@ -36,7 +36,7 @@ jobs:
           name: "Publish npm package"
           command: |
             if [ "${CIRCLE_PROJECT_USERNAME}" == "visualbis" ]; then 
-                 npm run publishPackage
+                 npm publish
             else
                 echo ${CIRCLE_PROJECT_USERNAME} 
             fi
