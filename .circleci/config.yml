@@ -35,10 +35,8 @@ jobs:
       - run:
           name: "Publish npm package"
           command: |
-            if [ "${CIRCLE_PROJECT_USERNAME}" == "visualbis" ]; then
-                 npm run leg-build
+            if [ "${CIRCLE_PROJECT_USERNAME}" == "visualbis" ]; then 
                  npm run publishPackage
             else
-                echo ${CIRCLE_PROJECT_USERNAME}
-                 npm run leg-build
+                echo ${CIRCLE_PROJECT_USERNAME} 
             fi
