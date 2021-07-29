@@ -11,6 +11,7 @@ interface IDraftEditorProps {
     initialContent?: string;
     textAlignment?: string;
     onContentChange?: (content: string) => void;
+    onContentTextChange?: (content: { formattedText: string, value: string}) => void;
     onCurrentFormatChange?: (formats: IDraftElementFormats) => void;
     showToolbar?: boolean;
     innerRef?: any
@@ -191,12 +192,16 @@ class DraftEditor extends Component<IDraftEditorProps, any> {
     };
 
     updateData = (editorStateUpdated: EditorState) => {
-        const { onContentChange } = this.props;
+        const { onContentChange, onContentTextChange } = this.props;
         this.setState({
             editorState: editorStateUpdated,
         });
         const markup = getContentFromEditorState(editorStateUpdated);
         onContentChange?.(markup);
+        const blocks = convertToRaw(editorStateUpdated.getCurrentContent()).blocks;
+        const value = blocks.map(block => (!block.text.trim() && '\n') || block.text).join('\n');
+        onContentTextChange?.({formattedText: value,
+        value: markup })
         this.sendFormat(editorStateUpdated);
     };
 
