@@ -12,6 +12,7 @@
   "license": "ISC",
   "dependencies": {
     "@draft-js-plugins/editor": "^4.1.0",
+    "@draft-js-plugins/mention": "^4.5.2",
     "@draft-js-plugins/static-toolbar": "^4.1.1",
     "@shelterzoom/draft-js-import-html": "^1.4.1",
     "@types/draft-js": "^0.11.4",

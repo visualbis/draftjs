@@ -6,6 +6,15 @@ import draftToHtml from 'draftjs-to-html';
 import React, { Component, Fragment } from 'react';
 import DraftToolbar, { IDraftElementFormats } from './DraftToolbar/DraftToolbar';
 import './Styles';
+import createMentionPlugin, {
+    defaultSuggestionsFilter,
+    MentionData,
+    MentionPluginTheme,
+} from '@draft-js-plugins/mention';
+
+import CustomMentionEditor, { SuggestionList } from "./Mention";
+import mentionData from './MentionData';
+
 
 interface IDraftEditorProps {
     initialContent?: string;
@@ -152,14 +161,18 @@ const getContentFromEditorState = (editorStateUpdated: EditorState) => {
 };
 
 class DraftEditor extends Component<IDraftEditorProps, any> {
-
+    private mentionSuggestionList: any
     constructor(props: IDraftEditorProps) {
         super(props);
         const { initialContent } = props;
+        this.mentionSuggestionList = null;
         this.state = {
             editorState: getEditorStateFromContent(initialContent),
             currentFormat: null,
+            searchOpen: false,
+            suggestions: mentionData,
         }
+        this.MentionComponents();
     }
 
 
@@ -214,9 +227,35 @@ class DraftEditor extends Component<IDraftEditorProps, any> {
         return 'not-handled';
     };
 
+    MentionComponents = () => {
+        const mentionPlugin = createMentionPlugin({
+            entityMutability: 'IMMUTABLE',
+            // theme: mentionsStyles,
+            mentionPrefix: '@',
+            supportWhitespace: true,
+        });
+        // eslint-disable-next-line no-shadow
+        const { MentionSuggestions } = mentionPlugin;
+        // eslint-disable-next-line no-shadow
+        const plugins = [mentionPlugin];
+
+        this.mentionSuggestionList = { plugins, MentionSuggestions }
+        return this.mentionSuggestionList;
+    }
+
+
     render() {
         const { textAlignment, showToolbar } = this.props;
-        const { editorState, currentFormat } = this.state;
+        const { editorState, currentFormat, searchOpen, suggestions } = this.state;
+
+        const onOpenChange = (_open: boolean) => {
+            this.setState({ searchOpen: _open })
+        };
+        const onSearchChange = ({ value }: { value: string }) => {
+            this.setState({ suggestions: defaultSuggestionsFilter(value, mentionData) })
+        };
+        const MentionComp = this.mentionSuggestionList?.MentionSuggestions
+
         return (
             <Fragment>
                 {showToolbar && <DraftToolbar currentFormat={currentFormat} setFormat={this.setFormat} />}
@@ -229,7 +268,22 @@ class DraftEditor extends Component<IDraftEditorProps, any> {
                     textAlignment={textAlignment as any}
                     handleKeyCommand={this.handleKeyCommand}
                     customStyleMap={CUSTOM_STYLE_MAP}
+                    plugins={this.mentionSuggestionList?.plugins}
                 />
+                {/* <div className="list_container">
+                    <MentionComp
+                        open={true}
+                        onOpenChange={onOpenChange}
+                        suggestions={suggestions}
+                        onSearchChange={onSearchChange}
+                        onAddMention={() => {
+                            // get the mention object selected
+                        }}
+                        entryComponent={SuggestionList}
+                        popoverContainer={({ children }) => <div>{children}</div>}
+                    />
+                </div> */}
+
             </Fragment>
         );
     }
