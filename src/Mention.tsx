@@ -19,8 +19,8 @@ import createMentionPlugin, {
   MentionData,
   MentionPluginTheme,
 } from '@draft-js-plugins/mention';
-import mentionData from './MentionData';
 import './Styles';
+import { MentionDataValue } from './MentionData';
 
 
 export interface EntryComponentProps {
@@ -49,13 +49,14 @@ export const  SuggestionList =(props: EntryComponentProps): ReactElement =>{
   return (
     <div {...parentProps} >
       <div className={`${theme?.mentionSuggestionsEntryContainer} ${"list_item"}`}>
+        {mention.avatar &&
         <div className={`${theme?.mentionSuggestionsEntryContainerLeft} ${"list_icon"}`}>
           <img
             src={mention.avatar}
             className={theme?.mentionSuggestionsEntryAvatar}
             role="presentation"
           />
-        </div>
+        </div>}
 
         <div className={theme?.mentionSuggestionsEntryContainerRight}>
           <div className={`${theme?.mentionSuggestionsEntryText} ${"list-title"}` }>
@@ -79,7 +80,7 @@ class CustomMentionEditor extends React.Component<any, any>  {
     // this.refs = React.createRef();
     this.state = {
       searchOpen: false,
-      suggestions: mentionData,
+      suggestions: MentionDataValue.mentionDataImg,
       editorState: EditorState.createEmpty()
     };
 
@@ -99,7 +100,7 @@ class CustomMentionEditor extends React.Component<any, any>  {
     this.setState({searchOpen: _open})
   };
   const onSearchChange =({ value }: { value: string }) => {
-    this.setState({suggestions :defaultSuggestionsFilter(value, mentionData) })
+    this.setState({suggestions :defaultSuggestionsFilter(value, MentionDataValue.mentionDataImg) })
   };
 
    
