@@ -1,6 +1,6 @@
 import { MentionData } from '@draft-js-plugins/mention';
 
-const mentionData: MentionData[] = [
+const mentionDataImg: MentionData[] = [
   {
     name: 'Matthew Russell',
     title: 'Senior Software Engineer',
@@ -41,4 +41,22 @@ const mentionData: MentionData[] = [
   },
 ];
 
-export default mentionData;
+const mentionDataText: MentionData[] = [
+  {
+    name: 'Matthew Russell',
+    title: 'Senior Software Engineer',
+    subTitle:"India"
+  },
+  {
+    name: 'Julian Krispel-Samsel',
+    title: 'United Kingdom',
+    subTitle:"US"
+  },
+  {
+    name: 'Jyoti Puri',
+    title: 'New Delhi, India',
+    subTitle:"UK"
+  },
+];
+
+export const MentionDataValue= {mentionDataImg, mentionDataText};

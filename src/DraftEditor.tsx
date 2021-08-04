@@ -8,12 +8,10 @@ import DraftToolbar, { IDraftElementFormats } from './DraftToolbar/DraftToolbar'
 import './Styles';
 import createMentionPlugin, {
     defaultSuggestionsFilter,
-    MentionData,
-    MentionPluginTheme,
 } from '@draft-js-plugins/mention';
 
 import CustomMentionEditor, { SuggestionList } from "./Mention";
-import mentionData from './MentionData';
+import { MentionDataValue } from './MentionData';
 
 
 interface IDraftEditorProps {
@@ -41,6 +39,11 @@ const CUSTOM_STYLE_MAP: DraftStyleMap = {
         fontSize: 'smaller',
     },
 };
+
+const MENTION_SUGGESTION_NAME = {
+    PREFIX_ONE:"@",
+    PREFIX_TWO:"$"
+}
 
 const resolveCustomStyleMap = (style: DraftInlineStyle) => {
     const colObj = {} as React.CSSProperties;
@@ -170,7 +173,7 @@ class DraftEditor extends Component<IDraftEditorProps, any> {
             editorState: getEditorStateFromContent(initialContent),
             currentFormat: null,
             searchOpen: false,
-            suggestions: mentionData,
+            suggestions: MentionDataValue.mentionDataImg,
         }
         this.MentionComponents();
     }
@@ -228,12 +231,14 @@ class DraftEditor extends Component<IDraftEditorProps, any> {
     };
 
     MentionComponents = () => {
-        const mentionPlugin = createMentionPlugin({
-            entityMutability: 'IMMUTABLE',
-            // theme: mentionsStyles,
-            mentionPrefix: '@',
-            supportWhitespace: true,
-        });
+        // const mentionPlugin = createMentionPlugin({
+        //     entityMutability: 'IMMUTABLE',
+        //     // theme: mentionsStyles,
+        //     mentionPrefix: '@',
+        //     supportWhitespace: true,
+        // });
+        const mentionPlugin = createMentionPlugin({ mentionTrigger: [MENTION_SUGGESTION_NAME.PREFIX_ONE, MENTION_SUGGESTION_NAME.PREFIX_TWO] });
+
         // eslint-disable-next-line no-shadow
         const { MentionSuggestions } = mentionPlugin;
         // eslint-disable-next-line no-shadow
@@ -251,8 +256,12 @@ class DraftEditor extends Component<IDraftEditorProps, any> {
         const onOpenChange = (_open: boolean) => {
             this.setState({ searchOpen: _open })
         };
-        const onSearchChange = ({ value }: { value: string }) => {
-            this.setState({ suggestions: defaultSuggestionsFilter(value, mentionData) })
+        const onSearchChange = ({trigger, value }: {trigger:string, value: string }) => {
+            if(trigger === MENTION_SUGGESTION_NAME.PREFIX_ONE){
+                this.setState({ suggestions: defaultSuggestionsFilter(value,  MentionDataValue.mentionDataImg) })
+            }else{
+                this.setState({ suggestions: defaultSuggestionsFilter(value,  MentionDataValue.mentionDataText) })
+            }
         };
         const MentionComp = this.mentionSuggestionList?.MentionSuggestions
 
@@ -272,7 +281,7 @@ class DraftEditor extends Component<IDraftEditorProps, any> {
                 />
                 {/* <div className="list_container">
                     <MentionComp
-                        open={true}
+                        open={searchOpen}
                         onOpenChange={onOpenChange}
                         suggestions={suggestions}
                         onSearchChange={onSearchChange}
