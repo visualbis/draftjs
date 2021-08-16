@@ -29,6 +29,7 @@ interface IDraftEditorProps {
     onMentionInput?:(value:string) => void;
     peopleSuggestion?: any[];
     valueSuggestion?: any[];
+    isMentionLoading?:boolean;
 }
 
 export interface IDraftEditorRef {
@@ -263,7 +264,6 @@ class DraftEditor extends Component<IDraftEditorProps, any> {
             hashSearchOpen: false,
             peopleSearchOpen: false,
             suggestions: props.valueSuggestion,
-            searchtype: ""
         }
         if(showMention && (showMention.people || showMention.value)) {
             this.MentionComponents();
@@ -370,13 +370,12 @@ class DraftEditor extends Component<IDraftEditorProps, any> {
         const { onMentionInput, valueSuggestion } = this.props;
         if(trigger === MENTION_SUGGESTION_NAME.PREFIX_ONE){
             onMentionInput(value);
-            this.setState({ searchType: "people"})
         }else{
             this.setState({ suggestions: defaultSuggestionsFilter(value,  valueSuggestion), searchtype: "value" })
         }
     };
     render() {
-        const { textAlignment, showToolbar,  peopleSuggestion  } = this.props;
+        const { textAlignment, showToolbar,  peopleSuggestion, isMentionLoading  } = this.props;
         const { editorState, currentFormat, peopleSearchOpen, hashSearchOpen, suggestions } = this.state;        
         const MentionComp = this.mentionSuggestionList?.MentionSuggestions
         const ValueMentionComp = this.mentionSuggestionList?.ValueSuggestion
@@ -397,8 +396,19 @@ class DraftEditor extends Component<IDraftEditorProps, any> {
                     plugins={this.mentionSuggestionList?.plugins}
                 />
                 
+                
                     <div className="list_container">
-                       { MentionComp && (<MentionComp
+                        {peopleSearchOpen && isMentionLoading && (
+                            <ul >
+                                <div className="menu-loading"></div>
+                            </ul>
+                        )}
+                        {peopleSearchOpen && !isMentionLoading && peopleSuggestion.length === 0 &&  (
+                            <ul style={{padding:"0 10px"}}>
+                                No Data found
+                            </ul>
+                        )}
+                       { MentionComp && !isMentionLoading && (<MentionComp
                             open={peopleSearchOpen}
                             onOpenChange={this.onOpenChange('peopleSearchOpen')}
                             suggestions={peopleSuggestion}
