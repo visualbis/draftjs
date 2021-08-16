@@ -225,23 +225,6 @@ const convertFromHTMLString = (html) => {
                 )
             }
         },
-        // textToEntity: (text, createEntity) => {
-        //     const result = [];
-        //     text.replace(/\@(\w+)/g, (match, name, offset) => {
-        //         const entityKey = createEntity(
-        //             'MENTION',
-        //             'IMMUTABLE',
-        //             {name}
-        //         );
-        //         result.push({
-        //             entity: entityKey,
-        //             offset,
-        //             length: match.length,
-        //             result: match
-        //         });
-        //     });
-        //     return result;
-        // },
         htmlToBlock: (nodeName, node) => {
             if (nodeName === 'blockquote') {
                 return {
@@ -261,7 +244,7 @@ class DraftEditor extends Component<IDraftEditorProps, any> {
         this.state = {
             editorState: EditorState.createWithContent(convertFromHTMLString(initialContent)),
             currentFormat: null,
-            hashSearchOpen: false,
+            valueSearchOpen: false,
             peopleSearchOpen: false,
             suggestions: props.valueSuggestion,
         }
@@ -312,7 +295,8 @@ class DraftEditor extends Component<IDraftEditorProps, any> {
             if(rawData.entityMap[key].type === '#mention') {
                 return;
             }
-            mentionList.push(rawData.entityMap[key].data.mention.value);
+            mentionList.push({"emailAddress" : rawData.entityMap[key].data.mention.value});
+
         })        
         const value = rawData.blocks.map(block => (!block.text.trim() && '\n') || block.text).join('\n');
         onContentTextChange?.({formattedText: value,
@@ -364,6 +348,7 @@ class DraftEditor extends Component<IDraftEditorProps, any> {
     }
 
     onOpenChange =(searchKey: string) =>  (_open: boolean) => {
+        const { onMentionInput } = this.props;
         this.setState({ [searchKey]: _open })
     };
     onSearchChange = ({trigger, value }: {trigger:string, value: string }) => {
@@ -371,12 +356,12 @@ class DraftEditor extends Component<IDraftEditorProps, any> {
         if(trigger === MENTION_SUGGESTION_NAME.PREFIX_ONE){
             onMentionInput(value);
         }else{
-            this.setState({ suggestions: defaultSuggestionsFilter(value,  valueSuggestion), searchtype: "value" })
+            this.setState({ suggestions: defaultSuggestionsFilter(value,  valueSuggestion)})
         }
     };
     render() {
         const { textAlignment, showToolbar,  peopleSuggestion, isMentionLoading  } = this.props;
-        const { editorState, currentFormat, peopleSearchOpen, hashSearchOpen, suggestions } = this.state;        
+        const { editorState, currentFormat, peopleSearchOpen, valueSearchOpen, suggestions } = this.state;        
         const MentionComp = this.mentionSuggestionList?.MentionSuggestions
         const ValueMentionComp = this.mentionSuggestionList?.ValueSuggestion
 
@@ -412,18 +397,15 @@ class DraftEditor extends Component<IDraftEditorProps, any> {
                             open={peopleSearchOpen}
                             onOpenChange={this.onOpenChange('peopleSearchOpen')}
                             suggestions={peopleSuggestion}
-                            onSearchChange={this.onSearchChange}
-                            onAddMention={() => {
-                                // get the mention object selected
-                            }}
+                            onSearchChange={this.onSearchChange}                            
                             entryComponent={SuggestionList}
                             popoverContainer={({ children }) => <div>{children}</div>}
                         />
                        )}
                         { ValueMentionComp && 
                             (<ValueMentionComp
-                                open={hashSearchOpen}
-                                onOpenChange={this.onOpenChange('hashSearchOpen')}
+                                open={valueSearchOpen}
+                                onOpenChange={this.onOpenChange('valueSearchOpen')}
                                 suggestions={suggestions}
                                 onSearchChange={this.onSearchChange}
                                 onAddMention={() => {
