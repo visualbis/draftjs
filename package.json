@@ -5,8 +5,9 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "webpack serve --port 3000",
-    "build": "gulp build"
+    "start": "webpack serve --port 3000  ",
+    "build": "gulp build && npm run replace && a",
+    "replace": "replace.bat"
   },
   "author": "Ramakrishnan",
   "license": "ISC",
@@ -20,11 +21,10 @@
     "@types/react-dom": "^17.0.9",
     "@visualbi/bifrost-ui": "^1.2.27-alpha2107060537",
     "classnames": "^2.3.1",
+    "draft-convert": "^2.1.12",
     "draft-js": "^0.11.7",
     "draftjs-to-html": "^0.9.1",
-    "file-loader": "^6.2.0",
-    "react": "^16.14.0",
-    "react-dom": "^16.12.0"
+    "file-loader": "^6.2.0"
   },
   "devDependencies": {
     "@types/webpack": "5.28.0",
@@ -51,5 +51,9 @@
     "gulp-typescript": "5.0.1",
     "del": "6.0.0",
     "source-map-loader": "3.0.0"
+  },
+  "peerDependencies": {
+    "react": "^16.14.0",
+    "react-dom": "^16.12.0"
   }
 }

@@ -9,19 +9,26 @@ import './Styles';
 import createMentionPlugin, {
     defaultSuggestionsFilter,
 } from '@draft-js-plugins/mention';
-
-import CustomMentionEditor, { SuggestionList } from "./Mention";
+import { SuggestionList } from "./Mention";
 import { MentionDataValue } from './MentionData';
+
+
+// import { Editor, createPlugin, pluginUtils } from "draft-extend";
+import { convertToHTML, convertFromHTML } from "draft-convert";
 
 
 interface IDraftEditorProps {
     initialContent?: string;
     textAlignment?: string;
     onContentChange?: (content: string) => void;
-    onContentTextChange?: (content: { formattedText: string, value: string}) => void;
+    onContentTextChange?: (content: { formattedText: string, value: string, mentionList :string[]}) => void;
     onCurrentFormatChange?: (formats: IDraftElementFormats) => void;
     showToolbar?: boolean;
-    innerRef?: any
+    innerRef?: any;
+    showMention?: { value: boolean, people: boolean};
+    onMentionInput?:(value:string) => void;
+    peopleSuggestion?: any[];
+    valueSuggestion?: any[];
 }
 
 export interface IDraftEditorRef {
@@ -42,7 +49,7 @@ const CUSTOM_STYLE_MAP: DraftStyleMap = {
 
 const MENTION_SUGGESTION_NAME = {
     PREFIX_ONE:"@",
-    PREFIX_TWO:"$"
+    PREFIX_TWO:"#"
 }
 
 const resolveCustomStyleMap = (style: DraftInlineStyle) => {
@@ -69,7 +76,7 @@ const resolveCustomStyleMap = (style: DraftInlineStyle) => {
 
 const getEditorStateFromContent = (content: string) => {
     const importOptions = {
-        customInlineFn: (htmlElement: HTMLElement, { Style }: InlineCreators) => {
+        customInlineFn: (htmlElement: HTMLElement, { Style, Entity }: InlineCreators) => {
             const styles = [];
             if (htmlElement.style.color) {
                 styles.push(`color-${htmlElement.style.color}`);
@@ -91,9 +98,11 @@ const getEditorStateFromContent = (content: string) => {
             }
             return styles.length ? Style(styles) : null;
         },
+        
     };
 
     const contentState = stateFromHTML(content, importOptions);
+    
     return EditorState.createWithContent(contentState);
 };
 
@@ -163,20 +172,103 @@ const getContentFromEditorState = (editorStateUpdated: EditorState) => {
     return draftToHtml(rawContentState);
 };
 
+const convertToHTMLString = (editorState) =>{
+    return convertToHTML({
+        styleToHTML: (style) => {
+          if (style === 'BOLD') {
+            return <span style={{color: 'blue'}} />;
+          }
+        },
+        blockToHTML: (block) => {
+          if (block.type === 'PARAGRAPH') {
+            return <p />;
+          }
+        },
+        entityToHTML: (entity, originalText) => {
+          if (entity.type === 'mention') {
+            return <span className="mention" style={{backgroundColor: 'blue'}}data-value={JSON.stringify({...entity.data.mention, image:"", avatar:""})} >{originalText}</span>;
+          } else if(entity.type === '#mention'){
+            return <span className="hash-mention" style={{backgroundColor: 'orange'}} data-value={JSON.stringify({...entity.data.mention, image:"", avatar:""})} >{originalText}</span>
+          }
+          return originalText;
+        }
+    })(editorState.getCurrentContent());
+}
+
+const convertFromHTMLString = (html) => {
+    if(!html) {
+        html = ""
+    }
+    return convertFromHTML({
+        htmlToStyle: (nodeName, node, currentStyle) => {
+            if (nodeName === 'span' && node.style.color === 'blue') {
+                return currentStyle.add('BLUE');
+            } else {
+                return currentStyle;
+            }
+        },
+        htmlToEntity: (nodeName, node, createEntity) => {
+            if (nodeName === 'span' && node.classList.contains('mention')) {
+                const data = JSON.parse(node.dataset.value);
+                return createEntity(
+                    'MENTION',
+                    'IMMUTABLE',
+                    {mention: {name:data.name, ...data}}
+                )
+            } else if(nodeName === 'span' && node.classList.contains('hash-mention')) {
+                const data = JSON.parse(node.dataset.value);
+                return createEntity(
+                    'MENTION',
+                    'IMMUTABLE',
+                    {mention: {name:data.name, ...data}}
+                )
+            }
+        },
+        // textToEntity: (text, createEntity) => {
+        //     const result = [];
+        //     text.replace(/\@(\w+)/g, (match, name, offset) => {
+        //         const entityKey = createEntity(
+        //             'MENTION',
+        //             'IMMUTABLE',
+        //             {name}
+        //         );
+        //         result.push({
+        //             entity: entityKey,
+        //             offset,
+        //             length: match.length,
+        //             result: match
+        //         });
+        //     });
+        //     return result;
+        // },
+        htmlToBlock: (nodeName, node) => {
+            if (nodeName === 'blockquote') {
+                return {
+                    type: 'blockquote',
+                    data: {}
+                };
+            }
+        }
+    })(html);
+}
 class DraftEditor extends Component<IDraftEditorProps, any> {
     private mentionSuggestionList: any
     constructor(props: IDraftEditorProps) {
         super(props);
-        const { initialContent } = props;
-        this.mentionSuggestionList = null;
+        const { initialContent, peopleSuggestion, showMention } = props;
+        this.mentionSuggestionList = null;   
         this.state = {
-            editorState: getEditorStateFromContent(initialContent),
+            editorState: EditorState.createWithContent(convertFromHTMLString(initialContent)),
             currentFormat: null,
-            searchOpen: false,
-            suggestions: MentionDataValue.mentionDataImg,
+            hashSearchOpen: false,
+            peopleSearchOpen: false,
+            suggestions: props.valueSuggestion,
+            searchtype: ""
         }
-        this.MentionComponents();
-    }
+        if(showMention && (showMention.people || showMention.value)) {
+            this.MentionComponents();
+        }
+    }    
 
 
     sendFormat = (nextEditorState: EditorState) => {
@@ -189,7 +281,7 @@ class DraftEditor extends Component<IDraftEditorProps, any> {
     };
 
     setContent = (content: string) => {
-        const updatedEditorState = getEditorStateFromContent(content);
+        const updatedEditorState = EditorState.createWithContent(convertFromHTMLString(content));
         this.updateData(updatedEditorState);
         return getContentFromEditorState(updatedEditorState);
     };
@@ -204,22 +296,39 @@ class DraftEditor extends Component<IDraftEditorProps, any> {
     };
 
     onEditorStateChange = (editorStateUpdated: EditorState) => {
+        // const editorState = this.onEditorTextChange(editorStateUpdated);
         this.updateData(editorStateUpdated);
     };
 
+    
     updateData = (editorStateUpdated: EditorState) => {
-        const { onContentChange, onContentTextChange } = this.props;
+        const { onContentTextChange } = this.props;
         this.setState({
             editorState: editorStateUpdated,
         });
-        const markup = getContentFromEditorState(editorStateUpdated);
-        onContentChange?.(markup);
-        const blocks = convertToRaw(editorStateUpdated.getCurrentContent()).blocks;
-        const value = blocks.map(block => (!block.text.trim() && '\n') || block.text).join('\n');
+        const rawData = convertToRaw(editorStateUpdated.getCurrentContent());
+        const mentionList = []
+        Object.keys(rawData.entityMap).forEach(key=> {
+            if(rawData.entityMap[key].type === '#mention') {
+                return;
+            }
+            mentionList.push(rawData.entityMap[key].data.mention.value);
+        })        
+        const value = rawData.blocks.map(block => (!block.text.trim() && '\n') || block.text).join('\n');
         onContentTextChange?.({formattedText: value,
-        value: markup })
+        value: convertToHTMLString(editorStateUpdated), mentionList })
         this.sendFormat(editorStateUpdated);
     };
+
+    onEditorTextChange= (editorStateUpdated:EditorState) => {
+        const html = convertToHTMLString(editorStateUpdated)
+        const editorState = EditorState.createWithContent(convertFromHTMLString(html))
+
+        this.setState({
+            editorState: editorState,
+        });
+        return editorState;
+    }
 
     handleKeyCommand = (command: string, editorStateUpdated: EditorState) => {
         const newState = RichUtils.handleKeyCommand(editorStateUpdated, command);
@@ -231,39 +340,47 @@ class DraftEditor extends Component<IDraftEditorProps, any> {
     };
 
     MentionComponents = () => {
-        // const mentionPlugin = createMentionPlugin({
-        //     entityMutability: 'IMMUTABLE',
-        //     // theme: mentionsStyles,
-        //     mentionPrefix: '@',
-        //     supportWhitespace: true,
-        // });
-        const mentionPlugin = createMentionPlugin({ mentionTrigger: [MENTION_SUGGESTION_NAME.PREFIX_ONE, MENTION_SUGGESTION_NAME.PREFIX_TWO] });
+        const { showMention } = this.props;
+        const mentionPlugin_PREFIX_ONE = showMention.people ? createMentionPlugin({ mentionTrigger: MENTION_SUGGESTION_NAME.PREFIX_ONE }): {MentionSuggestions: null};
+        const mentionPlugin_PREFIX_TWO = showMention.value ? createMentionPlugin({ mentionTrigger: MENTION_SUGGESTION_NAME.PREFIX_TWO }): {MentionSuggestions: null};
+
 
         // eslint-disable-next-line no-shadow
-        const { MentionSuggestions } = mentionPlugin;
-        // eslint-disable-next-line no-shadow
-        const plugins = [mentionPlugin];
+        const { MentionSuggestions } = mentionPlugin_PREFIX_ONE;
+        const { MentionSuggestions : ValueSuggestion } = mentionPlugin_PREFIX_TWO;
 
-        this.mentionSuggestionList = { plugins, MentionSuggestions }
+        
+        // eslint-disable-next-line no-shadow
+        const plugins = [];
+        if(showMention.people) {
+            plugins.push(mentionPlugin_PREFIX_ONE)
+        }
+        if(showMention.value) {
+            plugins.push(mentionPlugin_PREFIX_TWO)
+        }
+
+        this.mentionSuggestionList = { plugins, MentionSuggestions, ValueSuggestion }
         return this.mentionSuggestionList;
     }
 
-
+    onOpenChange =(searchKey: string) =>  (_open: boolean) => {
+        this.setState({ [searchKey]: _open })
+    };
+    onSearchChange = ({trigger, value }: {trigger:string, value: string }) => {
+        const { onMentionInput, valueSuggestion } = this.props;
+        if(trigger === MENTION_SUGGESTION_NAME.PREFIX_ONE){
+            onMentionInput(value);
+            this.setState({ searchType: "people"})
+        }else{
+            this.setState({ suggestions: defaultSuggestionsFilter(value,  valueSuggestion), searchtype: "value" })
+        }
+    };
     render() {
-        const { textAlignment, showToolbar } = this.props;
-        const { editorState, currentFormat, searchOpen, suggestions } = this.state;
-
-        const onOpenChange = (_open: boolean) => {
-            this.setState({ searchOpen: _open })
-        };
-        const onSearchChange = ({trigger, value }: {trigger:string, value: string }) => {
-            if(trigger === MENTION_SUGGESTION_NAME.PREFIX_ONE){
-                this.setState({ suggestions: defaultSuggestionsFilter(value,  MentionDataValue.mentionDataImg) })
-            }else{
-                this.setState({ suggestions: defaultSuggestionsFilter(value,  MentionDataValue.mentionDataText) })
-            }
-        };
+        const { textAlignment, showToolbar,  peopleSuggestion  } = this.props;
+        const { editorState, currentFormat, peopleSearchOpen, hashSearchOpen, suggestions } = this.state;        
         const MentionComp = this.mentionSuggestionList?.MentionSuggestions
+        const ValueMentionComp = this.mentionSuggestionList?.ValueSuggestion
+
 
         return (
             <Fragment>
@@ -279,20 +396,34 @@ class DraftEditor extends Component<IDraftEditorProps, any> {
                     customStyleMap={CUSTOM_STYLE_MAP}
                     plugins={this.mentionSuggestionList?.plugins}
                 />
-                {/* <div className="list_container">
-                    <MentionComp
-                        open={searchOpen}
-                        onOpenChange={onOpenChange}
-                        suggestions={suggestions}
-                        onSearchChange={onSearchChange}
-                        onAddMention={() => {
-                            // get the mention object selected
-                        }}
-                        entryComponent={SuggestionList}
-                        popoverContainer={({ children }) => <div>{children}</div>}
-                    />
-                </div> */}
-
+                
+                    <div className="list_container">
+                       { MentionComp && (<MentionComp
+                            open={peopleSearchOpen}
+                            onOpenChange={this.onOpenChange('peopleSearchOpen')}
+                            suggestions={peopleSuggestion}
+                            onSearchChange={this.onSearchChange}
+                            onAddMention={() => {
+                                // get the mention object selected
+                            }}
+                            entryComponent={SuggestionList}
+                            popoverContainer={({ children }) => <div>{children}</div>}
+                        />
+                       )}
+                        { ValueMentionComp && 
+                            (<ValueMentionComp
+                                open={hashSearchOpen}
+                                onOpenChange={this.onOpenChange('hashSearchOpen')}
+                                suggestions={suggestions}
+                                onSearchChange={this.onSearchChange}
+                                onAddMention={() => {
+                                    // get the mention object selected
+                                }}
+                                entryComponent={SuggestionList}
+                                popoverContainer={({ children }) => <div>{children}</div>}
+                            />)
+                        }
+                    </div>            
             </Fragment>
         );
     }

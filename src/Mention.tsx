@@ -60,7 +60,7 @@ export const  SuggestionList =(props: EntryComponentProps): ReactElement =>{
 
         <div className={theme?.mentionSuggestionsEntryContainerRight}>
           <div className={`${theme?.mentionSuggestionsEntryText} ${"list-title"}` }>
-            {mention.name}
+            {mention.label}
           </div>
 
           {/* <div className={theme?.mentionSuggestionsEntryTitle}>

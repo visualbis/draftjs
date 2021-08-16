@@ -43,17 +43,20 @@ const mentionDataImg: MentionData[] = [
 
 const mentionDataText: MentionData[] = [
   {
-    name: 'Matthew Russell',
+    name: '#{{Matthew Russell}}',
+    label: 'Matthew Russell',
     title: 'Senior Software Engineer',
     subTitle:"India"
   },
   {
-    name: 'Julian Krispel-Samsel',
+    name: '#{{Julian Krispel-Samsel}}',
+    label: 'Julian Krispel-Samsel',
     title: 'United Kingdom',
     subTitle:"US"
   },
   {
-    name: 'Jyoti Puri',
+    name: '#{{Jyoti Puri}}',
+    label: 'Jyoti Puri',
     title: 'New Delhi, India',
     subTitle:"UK"
   },
