@@ -22,7 +22,7 @@ export const ToolbarIconButton: React.FC<IToolbarIconButtonProps> = ({
     label,
     className,
 }: IToolbarIconButtonProps) => (
-    <div title={title}>
+    <div title={title} className='draft-editor-format-font-format'>
         <span
             id={id}
             aria-label={icon}

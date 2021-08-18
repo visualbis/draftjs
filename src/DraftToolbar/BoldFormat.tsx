@@ -18,7 +18,7 @@ const DraftBoldFormat = (props: IDraftBoldFormatProps) => {
 
     return (
         <ToolbarIconButton
-            // title="Apply bold formatting"
+            title="Bold"
             id={TB.FONT_BOLD}
             active={currentFormat?.bold}
             disabled={false}

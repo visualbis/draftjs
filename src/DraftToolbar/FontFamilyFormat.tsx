@@ -67,11 +67,11 @@ const DraftFontFamilyFormat = (props: IDraftFontFamilyFormatProps) => {
     };
 
     return (
-        <div style={{ width: 120, marginRight: 5 }}>
+        <div className="draft-editor-format-font-family">
             <Select
                 value={currentFormat?.font ?? fontFamilies[0].value}
                 options={fontFamilies}
-                title="Choose a font"
+                title="Font Family"
                 onChange={onSelect}
             />
         </div>

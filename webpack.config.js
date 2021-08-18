@@ -21,44 +21,50 @@ module.exports = {
         enforce: "pre",
         test: /\.js$/,
         loader: "source-map-loader"
-    },
+      },
       {
         test: /\.less$/,
         use: [
-            {
-                loader: 'style-loader',
-            },
-            {
-                loader: 'css-loader',
-            },
-            {
-                loader: 'less-loader',
-            },
+          {
+            loader: 'style-loader',
+          },
+          {
+            loader: 'css-loader',
+          },
+          {
+            loader: 'less-loader',
+          },
         ],
-    },
-    {
+      },
+      {
         test: /\.css$/,
         use: [
-            {
-                loader: 'style-loader',
-            },
-            {
-                loader: 'css-loader',
-            },
+          {
+            loader: 'style-loader',
+          },
+          {
+            loader: 'css-loader',
+          },
         ],
-    },
-  //   {
-  //     test: /\.(png|gif|jpe|jpg|woff|woff2|eot|ttf|svg)(\?.*$|$)/,
-  //     use: [{
-  //         loader: 'url-loader',
-  //         options: {
-  //             limit: 10000000
-  //         }
-  //     }]
-  // }
-]
+      },
+      //   {
+      //     test: /\.(png|gif|jpe|jpg|woff|woff2|eot|ttf|svg)(\?.*$|$)/,
+      //     use: [{
+      //         loader: 'url-loader',
+      //         options: {
+      //             limit: 10000000
+      //         }
+      //     }]
+      // }
+    ]
   },
   devtool: prod ? undefined : 'source-map',
+  watch: !prod ? true : false,
+  devServer: {
+    port: 3000,
+    open: true,
+    hot: true
+  },
   plugins: [
     new HtmlWebpackPlugin({
       template: 'index.html',

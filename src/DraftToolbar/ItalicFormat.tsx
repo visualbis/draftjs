@@ -16,16 +16,14 @@ const DraftItalicFormat = (props: IDraftItalicFormatProps) => {
     };
 
     return (
-        <div>
-            <ToolbarIconButton
-                // // title="Apply bold formatting"
-                // id={TB.FONT_BOLD}
-                active={currentFormat?.italic}
-                disabled={false}
-                icon={'ms-Icon ms-Icon--Italic'}
-                onClick={onClick}
-            />
-        </div>
+        <ToolbarIconButton
+            title="Italic"
+            // id={TB.FONT_BOLD}
+            active={currentFormat?.italic}
+            disabled={false}
+            icon={'ms-Icon ms-Icon--Italic'}
+            onClick={onClick}
+        />
     );
 };
 
