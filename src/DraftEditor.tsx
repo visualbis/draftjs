@@ -24,6 +24,7 @@ interface IDraftEditorProps {
     onContentTextChange?: (content: { formattedText: string, value: string, mentionList :string[]}) => void;
     onCurrentFormatChange?: (formats: IDraftElementFormats) => void;
     showToolbar?: boolean;
+    toolbarOptions?:string[];
     innerRef?: any;
     showMention?: { value: boolean, people: boolean};
     onMentionInput?:(value:string) => void;
@@ -255,10 +256,14 @@ class DraftEditor extends Component<IDraftEditorProps, any> {
 
 
     sendFormat = (nextEditorState: EditorState) => {
+        const { format:prevFormat } = this.state;
         const { onCurrentFormatChange } = this.props;
         const format = getFormat(nextEditorState);
         this.setState({
-            format
+            format: {
+                ...prevFormat,
+                ...format
+            }
         });
         onCurrentFormatChange?.(format);
     };
@@ -361,14 +366,14 @@ class DraftEditor extends Component<IDraftEditorProps, any> {
     };
     render() {
         const { textAlignment, showToolbar,  peopleSuggestion, isMentionLoading  } = this.props;
-        const { editorState, currentFormat, peopleSearchOpen, valueSearchOpen, suggestions } = this.state;        
+        const { editorState, currentFormat, peopleSearchOpen, valueSearchOpen, suggestions ,format} = this.state;        
         const MentionComp = this.mentionSuggestionList?.MentionSuggestions
         const ValueMentionComp = this.mentionSuggestionList?.ValueSuggestion
 
 
         return (
             <Fragment>
-                {showToolbar && <DraftToolbar currentFormat={currentFormat} setFormat={this.setFormat} />}
+                {showToolbar && <DraftToolbar currentFormat={format} setFormat={this.setFormat} />}
                 <Editor
                     customStyleFn={resolveCustomStyleMap}
                     preserveSelectionOnBlur
