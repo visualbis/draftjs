@@ -18,8 +18,7 @@ const DraftFontColor = (props: IDraftFontColorProps) => {
   return (
     <div  title='Font Color' className="draft-editor-format-font-style">
       <AdvancedColorPicker
-        // className={` fontColorIcon`}
-        isCompositeButton
+        className='fontColorIcon'
         isSVGIcon
         icon={"ms-Icon ms-Icon--FontColorA"}
         showIconDropDown
@@ -27,8 +26,6 @@ const DraftFontColor = (props: IDraftFontColorProps) => {
         value={currentFormat?.color}
         // recentColors={recentColors}
         onChange={onChange}
-        hasNoFill={false}
-        isInLine
       />
     </div>
   );
