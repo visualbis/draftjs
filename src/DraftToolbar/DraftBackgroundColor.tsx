@@ -18,8 +18,7 @@ const DraftBackgroundColor = (props: IDraftBackgroundColorProps) => {
   return (
     <div title='Background Color' className="draft-editor-format-font-style">
       <AdvancedColorPicker
-        className={`mr-6`}
-        isCompositeButton
+        className={`mr-6 fontColorIcon`}
         isSVGIcon
         icon={"ms-Icon ms-Icon--BucketColor"}
         showIconDropDown
@@ -27,8 +26,6 @@ const DraftBackgroundColor = (props: IDraftBackgroundColorProps) => {
         value={currentFormat?.backgroundColor}
         // recentColors={recentColors}
         onChange={onChange}
-        hasNoFill={false}
-        isInLine
       />
     </div>
   );
