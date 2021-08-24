@@ -24,12 +24,12 @@ const DraftFontSizeFormat = (props: IDraftFontSizeFormatProps) => {
     };
 
     return (
-        <div style={{ width: 70, marginRight: 5 }}>
+        <div  title='Font Size' className="draft-editor-format-font-size">
             <Select
                 // className={`toolbar-select `}
                 value={currentFormat?.size ?? sizeDropdown[4].value}
                 options={sizeDropdown}
-                title="Choose a font"
+                title="Font Size"
                 onChange={onSelect}
             />
         </div>
