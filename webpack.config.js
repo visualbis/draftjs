@@ -22,6 +22,10 @@ module.exports = {
         test: /\.js$/,
         loader: "source-map-loader"
     },
+    {
+      test: /plugin\.css$/,
+      loaders: ['style-loader', 'css'],
+    },
       {
         test: /\.less$/,
         use: [
