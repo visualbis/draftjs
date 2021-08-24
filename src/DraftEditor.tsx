@@ -150,7 +150,7 @@ class DraftEditor extends Component<IDraftEditorProps, any> {
             if (rawData.entityMap[key].type === '#mention') {
                 return;
             }
-            mentionList.push({ "emailAddress": rawData.entityMap[key].data.mention.value });
+            mentionList.push({ "emailAddress": rawData.entityMap[key].data.mention.value, fullName:  rawData.entityMap[key].data.mention.name});
 
         })
         const value = rawData.blocks.map(block => (!block.text.trim() && '\n') || block.text).join('\n');
