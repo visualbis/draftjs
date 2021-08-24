@@ -59,13 +59,14 @@ export const  SuggestionList =(props: EntryComponentProps): ReactElement =>{
         </div>}
 
         <div className={theme?.mentionSuggestionsEntryContainerRight}>
-          <div className={`${theme?.mentionSuggestionsEntryText} ${"list-title"}` }>
+          <div className={`${theme?.mentionSuggestionsEntryTitle} ${"list-title"}` }>
             {mention.label}
           </div>
 
-          {/* <div className={theme?.mentionSuggestionsEntryTitle}>
-            {mention.title}
-          </div> */}
+          { mention.email && <div className={theme?.mentionSuggestionsEntryText}  style={{marginLeft: 0}}>
+            {mention.email}
+          </div>
+          }
         </div>
       </div>
     </div>
@@ -110,7 +111,7 @@ class CustomMentionEditor extends React.Component<any, any>  {
       entityMutability: 'IMMUTABLE',
       // theme: mentionsStyles,
       mentionPrefix: '@',
-      supportWhitespace: true,
+      supportWhitespace: false,
     });
     // eslint-disable-next-line no-shadow
     const { MentionSuggestions } = mentionPlugin;
