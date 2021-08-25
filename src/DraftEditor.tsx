@@ -55,7 +55,6 @@ const MENTION_SUGGESTION_NAME = {
 }
 
 const PopOverConatiner = (props) => {
-    debugger;
     const boudingRect = props.store.getReferenceElement()?.getBoundingClientRect();
     if (!boudingRect) {
         return null
@@ -64,6 +63,16 @@ const PopOverConatiner = (props) => {
     return (<div style={style}>{props.children}</div>)
 }
 
+const mentionAnchorStyle: React.CSSProperties = {
+    color: '#6264a7',
+    cursor: 'pointer',
+    display: 'inline-block',
+    paddingLeft: '2px',
+    paddingRight: '2px',
+    borderRadius: '2px',
+    fontSize: '10px',
+    textDecoration: 'none'
+}
 const convertToHTMLString = (editorState) => {
     return convertToHTML({
         styleToHTML: (style) => {
@@ -78,9 +87,9 @@ const convertToHTMLString = (editorState) => {
         },
         entityToHTML: (entity, originalText) => {
             if (entity.type === 'mention') {
-                return <a href={entity.data.mention.link} className="mention" style={{ backgroundColor: 'blue' }} data-value={JSON.stringify({ ...entity.data.mention, image: "", avatar: "" })} >{originalText}</a>;
+                return <a className="mention" style={mentionAnchorStyle} data-value={JSON.stringify({ ...entity.data.mention, image: "", avatar: "" })} >{originalText}</a>;
             } else if (entity.type === '#mention') {
-                return <a href={entity.data.mention.link} className="hash-mention" style={{ backgroundColor: 'orange' }} data-value={JSON.stringify({ ...entity.data.mention, image: "", avatar: "" })} >{originalText}</a>
+                return <a className="hash-mention" style={{...mentionAnchorStyle, color: "green"}} data-value={JSON.stringify({ ...entity.data.mention, image: "", avatar: "" })} >{originalText}</a>
             }
             return originalText;
         }
@@ -248,7 +257,7 @@ class DraftEditor extends Component<IDraftEditorProps, any> {
                         </ul>
                     )}
                 </div>
-                {MentionComp && !isMentionLoading && (<MentionComp
+                {MentionComp  && (<MentionComp
                     open={peopleSearchOpen}
                     onOpenChange={this.onOpenChange('peopleSearchOpen')}
                     suggestions={peopleSuggestion}
