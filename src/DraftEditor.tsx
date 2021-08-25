@@ -150,9 +150,14 @@ class DraftEditor extends Component<IDraftEditorProps, any> {
 
     updateData = (editorStateUpdated: EditorState) => {
         const { onContentTextChange } = this.props;
+        const { peopleSearchOpen } = this.state;
         this.setState({
             editorState: editorStateUpdated,
         });
+        this.sendFormat(editorStateUpdated);
+        if(peopleSearchOpen) {
+            return;
+        }
         const rawData = convertToRaw(editorStateUpdated.getCurrentContent());
         const mentionList = []
         Object.keys(rawData.entityMap).forEach(key => {
@@ -167,7 +172,6 @@ class DraftEditor extends Component<IDraftEditorProps, any> {
             formattedText: value,
             value: convertToHTMLString(editorStateUpdated), mentionList
         })
-        this.sendFormat(editorStateUpdated);
     };
 
     onEditorTextChange = (editorStateUpdated: EditorState) => {
