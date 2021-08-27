@@ -141,14 +141,14 @@ const convertFromHTMLString = (html) => {
             }
         },
         htmlToEntity: (nodeName, node, createEntity) => {
-            if (nodeName === 'a' && node.classList.contains('mention')) {
+            if (nodeName === 'span' && node.classList.contains('mention')) {
                 const data = JSON.parse(node.dataset.value);
                 return createEntity(
                     'mention',
                     'IMMUTABLE',
                     { mention: { name: data.name, ...data } }
                 )
-            } else if (nodeName === 'a' && node.classList.contains('hash-mention')) {
+            } else if (nodeName === 'span' && node.classList.contains('hash-mention')) {
                 const data = JSON.parse(node.dataset.value);
                 return createEntity(
                     'mention',

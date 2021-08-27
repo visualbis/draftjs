@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "webpack serve",
-    "build": "gulp build ",
+    "build": "gulp build && npm run replace",
     "replace": "replace.bat"
   },
   "author": "Ramakrishnan",

@@ -63,14 +63,10 @@ const PopOverConatiner = (props) => {
     return (<div style={style}>{props.children}</div>)
 }
 
-const mentionAnchorStyle: React.CSSProperties = {
-    color: '#6264a7',
-    cursor: 'pointer',
-    display: 'inline-block',
+const mentionAnchorStyle: React.CSSProperties = {    
     paddingLeft: '2px',
     paddingRight: '2px',
     borderRadius: '2px',
-    fontSize: '10px',
     textDecoration: 'none'
 }
 const convertToHTMLString = (editorState) => {
@@ -87,9 +83,9 @@ const convertToHTMLString = (editorState) => {
         },
         entityToHTML: (entity, originalText) => {
             if (entity.type === 'mention') {
-                return <a className="mention" style={mentionAnchorStyle} data-value={JSON.stringify({ ...entity.data.mention, image: "", avatar: "" })} >{originalText}</a>;
+                return <span className="mention" style={{...mentionAnchorStyle, color: "#ba55d3"}} data-value={JSON.stringify({ ...entity.data.mention, image: "", avatar: "" })} >{originalText}</span>;
             } else if (entity.type === '#mention') {
-                return <a className="hash-mention" style={{...mentionAnchorStyle, color: "green"}} data-value={JSON.stringify({ ...entity.data.mention, image: "", avatar: "" })} >{originalText}</a>
+                return <span className="hash-mention" style={{...mentionAnchorStyle}} data-value={JSON.stringify({ ...entity.data.mention, image: "", avatar: "" })} >{originalText}</span>
             }
             return originalText;
         }
