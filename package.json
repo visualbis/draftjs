@@ -19,7 +19,7 @@
     "@types/draft-js": "^0.11.4",
     "@types/draftjs-to-html": "^0.8.1",
     "@types/react-dom": "^17.0.9",
-    "@visualbi/bifrost-ui": "1.2.30-alpha2109010801",
+    "@visualbi/bifrost-ui": "1.2.30-alpha2109010843",
     "classnames": "^2.3.1",
     "draft-convert": "^2.1.12",
     "draft-js": "^0.11.7",
