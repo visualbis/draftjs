@@ -1,29 +1,25 @@
 import { default as Editor } from '@draft-js-plugins/editor';
-import { InlineCreators, stateFromHTML } from '@shelterzoom/draft-js-import-html';
 import { convertToRaw, DraftInlineStyle, DraftStyleMap, EditorState, Modifier, RichUtils } from 'draft-js';
 import 'draft-js/dist/Draft.css';
-import draftToHtml from 'draftjs-to-html';
 import React, { Component, Fragment } from 'react';
 import { SuggestionList } from './Mention'
-import DraftToolbar, { IDraftElementFormats } from './DraftToolbar/DraftToolbar';
 import './Styles';
 import createMentionPlugin, {
     defaultSuggestionsFilter,
 } from '@draft-js-plugins/mention';
 import "@draft-js-plugins/mention/lib/plugin.css";
-import  { convertFromHTMLString, resolveCustomStyleMap, formatText, getFormat, getContentFromEditorState } from './Service/draftEditor'
-// import { mentionsStyles } from './Styles';
-// import { Editor, createPlugin, pluginUtils } from "draft-extend";
+import  { convertFromHTMLString, resolveCustomStyleMap, formatText, getFormat, getContentFromEditorState, IDraftElementFormats } from './Service/draftEditor'
 import { convertToHTML, convertFromHTML } from "draft-convert";
+import { ReactElement } from 'react';
 
 
 interface IDraftEditorProps {
     initialContent?: string;
     textAlignment?: string;
     onContentChange?: (content: string) => void;
-    onContentTextChange?: (content: { formattedText: string, value: string, mentionList: string[] }) => void;
-    onCurrentFormatChange?: (formats: IDraftElementFormats) => void;
-    showToolbar?: boolean;
+    onContentTextChange?: (content: { formattedText: string, value: string, mentionList: string[],rawValue?:string }) => void;
+    onCurrentFormatChange?: (formats:IDraftElementFormats) => void;
+    toolbarComponent?: ReactElement;
     toolbarOptions?:string[];
     innerRef?: any;
     showMention?: { value: boolean, people: boolean };
@@ -166,7 +162,8 @@ class DraftEditor extends Component<IDraftEditorProps, any> {
         const value = rawData.blocks.map(block => (!block.text.trim() && '\n') || block.text).join('\n');
         onContentTextChange?.({
             formattedText: value,
-            value: convertToHTMLString(editorStateUpdated), mentionList
+            value: convertToHTMLString(editorStateUpdated), mentionList,
+            rawValue:getContentFromEditorState(editorStateUpdated)
         })
     };
 
@@ -225,7 +222,7 @@ class DraftEditor extends Component<IDraftEditorProps, any> {
         }
     };
     render() {
-        const { textAlignment, showToolbar,  peopleSuggestion, isMentionLoading  } = this.props;
+        const { textAlignment, toolbarComponent,  peopleSuggestion, isMentionLoading  } = this.props;
         const { editorState, peopleSearchOpen, valueSearchOpen, suggestions ,format} = this.state;        
         const MentionComp = this.mentionSuggestionList?.MentionSuggestions
         const ValueMentionComp = this.mentionSuggestionList?.ValueSuggestion
@@ -233,7 +230,7 @@ class DraftEditor extends Component<IDraftEditorProps, any> {
 
         return (
             <Fragment>
-                {showToolbar && <DraftToolbar currentFormat={format} setFormat={this.setFormat} />}
+                {toolbarComponent && React.cloneElement(toolbarComponent,{currentFormat:format, setFormat:this.setFormat})}
                 <Editor
                     customStyleFn={resolveCustomStyleMap}
                     preserveSelectionOnBlur

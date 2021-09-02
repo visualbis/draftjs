@@ -3,9 +3,22 @@ import { convertToHTML } from "draft-convert";
 import { convertFromHTML } from "draft-convert";
 import { convertToRaw, DraftInlineStyle, EditorState, Modifier, RichUtils } from "draft-js";
 import draftToHtml from "draftjs-to-html";
-import { IDraftElementFormats } from '../DraftToolbar/DraftToolbar';
 
-
+export interface IDraftElementFormats {
+    font?: string;
+    bold?: boolean;
+    italic?: boolean;
+    underline?: boolean;
+    size?: string;
+    color?: string;
+    background?: string;
+    align?: string;
+    superScript?: boolean;
+    subScript?: boolean;
+    enableBorder?: boolean;
+    borderColor?: string;
+    backgroundColor?: string;
+  }
 
 const resolveCustomStyleMap = (style: DraftInlineStyle) => {
     const colObj = {} as React.CSSProperties;
