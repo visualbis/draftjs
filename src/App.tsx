@@ -11,7 +11,6 @@ export const App = () => {
     <DraftEditor
       initialContent={content}
       onContentChange={setContent}
-      showToolbar
     />
     // CustomMentionEditor()
   );
