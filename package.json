@@ -39,6 +39,8 @@
     "less": "^3.12.2",
     "less-loader": "10.0.1",
     "mini-css-extract-plugin": "2.1.0",
+    "react": "^16.14.0",
+    "react-dom": "^16.12.0",
     "sass-loader": "12.1.0",
     "source-map-loader": "3.0.0",
     "style-loader": "^3.1.0",
