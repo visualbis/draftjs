@@ -104,26 +104,28 @@ const convertFromHTMLString = (html: string): Draft.ContentState => {
     }
     return convertFromHTML({
         htmlToStyle: (nodeName, node, currentStyle) => {
-            if (node.style.color) {
-                currentStyle = currentStyle.add(`${formatKeys.color}__${node.style.color}`);
-            }
-            if (node.style.backgroundColor) {
-                currentStyle = currentStyle.add(`${formatKeys.background}__${node.style.backgroundColor}`);
-            }
-            if (node.style.fontFamily) {
-                currentStyle = currentStyle.add(`${formatKeys.fontFamily}__${node.style.fontFamily}`);
-            }
-            if (node.style.fontSize) {
-                currentStyle = currentStyle.add(`${formatKeys.fontSize}__${node.style.fontSize}`);
-            }
-            if (node.style.lineHeight) {
-                currentStyle = currentStyle.add(`${formatKeys.lineHeight}__${node.style.fontSize}`);
-            }
-            if (node.tagName === 'SUB') {
-                currentStyle = currentStyle.add(formatKeys.subScript.toUpperCase());
-            }
-            if (node.tagName === 'SUP') {
-                currentStyle = currentStyle.add(formatKeys.superScript.toUpperCase());
+            if (nodeName !== 'body') {
+                if (node.style.color) {
+                    currentStyle = currentStyle.add(`${formatKeys.color}__${node.style.color}`);
+                }
+                if (node.style.backgroundColor) {
+                    currentStyle = currentStyle.add(`${formatKeys.background}__${node.style.backgroundColor}`);
+                }
+                if (node.style.fontFamily) {
+                    currentStyle = currentStyle.add(`${formatKeys.fontFamily}__${node.style.fontFamily}`);
+                }
+                if (node.style.fontSize) {
+                    currentStyle = currentStyle.add(`${formatKeys.fontSize}__${node.style.fontSize}`);
+                }
+                if (node.style.lineHeight) {
+                    currentStyle = currentStyle.add(`${formatKeys.lineHeight}__${node.style.lineHeight}`);
+                }
+                if (node.tagName === 'SUB') {
+                    currentStyle = currentStyle.add(formatKeys.subScript.toUpperCase());
+                }
+                if (node.tagName === 'SUP') {
+                    currentStyle = currentStyle.add(formatKeys.superScript.toUpperCase());
+                }
             }
             return currentStyle;
         },
