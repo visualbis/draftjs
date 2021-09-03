@@ -98,7 +98,7 @@ const getContentFromEditorState = (editorStateUpdated: EditorState) => {
     return draftToHtml(rawContentState);
 };
 
-const convertFromHTMLString = (html: string) => {
+const convertFromHTMLString = (html: string): Draft.ContentState => {
     if (!html) {
         html = '';
     }
