@@ -38,6 +38,7 @@ interface IDraftEditorProps {
     peopleSuggestion?: any[];
     valueSuggestion?: any[];
     isMentionLoading?: boolean;
+    placeholder?: string;
 }
 
 export interface IDraftEditorRef {
@@ -356,7 +357,7 @@ class DraftEditor extends Component<IDraftEditorProps, any> {
         return 'not-handled';
     };
     render() {
-        const { textAlignment, toolbarComponent, peopleSuggestion, isMentionLoading } = this.props;
+        const { textAlignment, toolbarComponent, peopleSuggestion, isMentionLoading, placeholder } = this.props;
         const { editorState, peopleSearchOpen, valueSearchOpen, suggestions, format } = this.state;
         const MentionComp = this.mentionSuggestionList?.MentionSuggestions;
         const ValueMentionComp = this.mentionSuggestionList?.ValueSuggestion;
@@ -370,6 +371,7 @@ class DraftEditor extends Component<IDraftEditorProps, any> {
                     preserveSelectionOnBlur
                     stripPastedStyles
                     editorState={editorState}
+                    placeholder={placeholder}
                     onChange={this.onEditorStateChange}
                     textAlignment={textAlignment as any}
                     handleKeyCommand={this.handleKeyCommand}
