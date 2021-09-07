@@ -1,94 +1,65 @@
-import { InlineCreators, stateFromHTML } from "@shelterzoom/draft-js-import-html";
-import { convertToHTML } from "draft-convert";
-import { convertFromHTML } from "draft-convert";
-import { convertToRaw, DraftInlineStyle, EditorState, Modifier, RichUtils } from "draft-js";
-import draftToHtml from "draftjs-to-html";
-import { IDraftElementFormats } from '../DraftToolbar/DraftToolbar';
+import { convertFromHTML } from 'draft-convert';
+import { convertToRaw, DraftInlineStyle, EditorState, Modifier, RichUtils } from 'draft-js';
+import draftToHtml from 'draftjs-to-html';
+import { formatKeys, styleValues } from './UIconstants';
 
-
+export interface IDraftElementFormats {
+    font?: string;
+    bold?: boolean;
+    italic?: boolean;
+    underline?: boolean;
+    size?: string;
+    color?: string;
+    background?: string;
+    align?: string;
+    superScript?: boolean;
+    subScript?: boolean;
+    enableBorder?: boolean;
+    borderColor?: string;
+    backgroundColor?: string;
+}
 
 const resolveCustomStyleMap = (style: DraftInlineStyle) => {
     const colObj = {} as React.CSSProperties;
     style.forEach((styleKey) => {
         if (styleKey) {
-            if (styleKey.includes('color-')) {
-                const [, color] = styleKey.split('color-');
-                colObj.color = color;
-            } else if (styleKey.includes('backgroundColor-')) {
-                const [, backgroundColor] = styleKey.split('backgroundColor-');
-                colObj.backgroundColor = backgroundColor;
-            } else if (styleKey.includes('fontfamily-')) {
-                const [, font] = styleKey.split('fontfamily-');
-                colObj.fontFamily = font;
-            } else if (styleKey.includes('fontsize-')) {
-                const [, size] = styleKey.split('fontsize-');
-                colObj.fontSize = size;
-            }
+            styleValues.some((styleValue) => {
+                if (styleKey.includes(styleValue.key)) {
+                    const [, val] = styleKey.split(styleValue.key);
+                    colObj[styleValue.value] = val;
+                    return true;
+                }
+            });
         }
     });
     return colObj;
 };
 
-// const getEditorStateFromContent = (content: string) => {
-//     const importOptions = {
-//         customInlineFn: (htmlElement: HTMLElement, { Style, Entity }: InlineCreators) => {
-//             const styles = [];
-//             if (htmlElement.style.color) {
-//                 styles.push(`color-${htmlElement.style.color}`);
-//             }
-//             if (htmlElement.style.backgroundColor) {
-//                 styles.push(`backgroundColor-${htmlElement.style.backgroundColor}`);
-//             }
-//             if (htmlElement.style.fontFamily) {
-//                 styles.push(`fontfamily-${htmlElement.style.fontFamily}`);
-//             }
-//             if (htmlElement.style.fontSize) {
-//                 styles.push(`fontsize-${htmlElement.style.fontSize}`);
-//             }
-//             if (htmlElement.tagName === 'SUB') {
-//                 styles.push('SUBSCRIPT');
-//             }
-//             if (htmlElement.tagName === 'SUP') {
-//                 styles.push('SUPERSCRIPT');
-//             }
-//             return styles.length ? Style(styles) : null;
-//         },
-
-//     };
-
-//     const contentState = stateFromHTML(content, importOptions);
-
-//     return EditorState.createWithContent(contentState);
-// };
-
 const getFormat = (editorStateData: EditorState) => {
     const style = editorStateData.getCurrentInlineStyle();
     const format: IDraftElementFormats = {
-        bold: style.has('BOLD'),
-        italic: style.has('ITALIC'),
-        underline: style.has('UNDERLINE'),
-        subScript: style.has('SUBSCRIPT'),
-        superScript: style.has('SUPERSCRIPT'),
+        bold: style.has(formatKeys.bold.toUpperCase()),
+        italic: style.has(formatKeys.italic.toUpperCase()),
+        underline: style.has(formatKeys.underline.toUpperCase()),
+        subScript: style.has(formatKeys.subScript.toUpperCase()),
+        superScript: style.has(formatKeys.superScript.toUpperCase()),
     };
     style.forEach((styleKey) => {
         if (styleKey) {
-            if (styleKey.includes('color-')) {
-                const [, color] = styleKey.split('color-');
-                format.color = color;
-            } else if (styleKey.includes('backgroundColor-')) {
-                const [, backgroundColor] = styleKey.split('backgroundColor-');
-                format.backgroundColor = backgroundColor;
-            } else if (styleKey.includes('fontfamily-')) {
-                const [, font] = styleKey.split('fontfamily-');
-                try {
-                    format.font = JSON.parse(font);
-                } catch (error) {
-                    format.font = font;
+            styleValues.some((styleValue) => {
+                if (styleKey.includes(styleValue.key)) {
+                    let [, val] = styleKey.split(styleValue.key);
+                    format[styleValue.value] = val;
+                    if (styleValue.parse) {
+                        try {
+                            format[styleValue.value] = JSON.parse(val);
+                        } catch (error) {
+                            format[styleValue.value] = val;
+                        }
+                    }
+                    return true;
                 }
-            } else if (styleKey.includes('fontsize-')) {
-                const [, size] = styleKey.split('fontsize-');
-                format.size = size;
-            }
+            });
         }
     });
 
@@ -102,7 +73,7 @@ const formatText = (editorState: EditorState, formatType: string, value: string)
     const currentStyleBefore = editorState.getCurrentInlineStyle();
 
     currentStyleBefore.forEach((color) => {
-        if (color && color.includes(`${formatType}-`)) {
+        if (color && color.includes(`${formatType}__`)) {
             contentState = Modifier.removeInlineStyle(contentState, selection, color);
         }
     });
@@ -127,45 +98,47 @@ const getContentFromEditorState = (editorStateUpdated: EditorState) => {
     return draftToHtml(rawContentState);
 };
 
-
-const convertFromHTMLString = (html) => {
+const convertFromHTMLString = (html: string): Draft.ContentState => {
     if (!html) {
-        html = ""
+        html = '';
     }
     return convertFromHTML({
         htmlToStyle: (nodeName, node, currentStyle) => {
-            if (nodeName === 'span' && node.style.color === 'blue') {
-                return currentStyle.add('BLUE');
-            } else {
-                return currentStyle;
+            if (nodeName !== 'body') {
+                if (node.style.color) {
+                    currentStyle = currentStyle.add(`${formatKeys.color}__${node.style.color}`);
+                }
+                if (node.style.backgroundColor) {
+                    currentStyle = currentStyle.add(`${formatKeys.background}__${node.style.backgroundColor}`);
+                }
+                if (node.style.fontFamily) {
+                    currentStyle = currentStyle.add(`${formatKeys.fontFamily}__${node.style.fontFamily}`);
+                }
+                if (node.style.fontSize) {
+                    currentStyle = currentStyle.add(`${formatKeys.fontSize}__${node.style.fontSize}`);
+                }
+                if (node.style.lineHeight) {
+                    currentStyle = currentStyle.add(`${formatKeys.lineHeight}__${node.style.lineHeight}`);
+                }
+                if (node.tagName === 'SUB') {
+                    currentStyle = currentStyle.add(formatKeys.subScript.toUpperCase());
+                }
+                if (node.tagName === 'SUP') {
+                    currentStyle = currentStyle.add(formatKeys.superScript.toUpperCase());
+                }
             }
+            return currentStyle;
         },
         htmlToEntity: (nodeName, node, createEntity) => {
             if (nodeName === 'span' && node.classList.contains('mention')) {
                 const data = JSON.parse(node.dataset.value);
-                return createEntity(
-                    'mention',
-                    'IMMUTABLE',
-                    { mention: { name: data.name, ...data } }
-                )
+                return createEntity('mention', 'IMMUTABLE', { mention: { name: data.name, ...data } });
             } else if (nodeName === 'span' && node.classList.contains('hash-mention')) {
                 const data = JSON.parse(node.dataset.value);
-                return createEntity(
-                    'mention',
-                    'IMMUTABLE',
-                    { mention: { name: data.name, ...data } }
-                )
+                return createEntity('mention', 'IMMUTABLE', { mention: { name: data.name, ...data } });
             }
         },
-        htmlToBlock: (nodeName, node) => {
-            if (nodeName === 'blockquote') {
-                return {
-                    type: 'blockquote',
-                    data: {}
-                };
-            }
-        }
     })(html);
-}
+};
 
-export { convertFromHTMLString, resolveCustomStyleMap, formatText, getFormat, getContentFromEditorState }
+export { convertFromHTMLString, resolveCustomStyleMap, formatText, getFormat, getContentFromEditorState };
