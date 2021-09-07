@@ -60,7 +60,7 @@ const PopOverConatiner = (props) => {
         return null
     }
     const style: React.CSSProperties = boudingRect ? { position: boudingRect ? "fixed" : null, left: boudingRect?.left + 20, top: boudingRect?.top + 10, backgroundColor: "#fff", zIndex: 1000, boxShadow: '0px 4px 4px rgb(0 0 0 / 25%)', maxHeight: '160px', overflowY: "auto" } : null;
-    return (<div style={style}>{props.children}</div>)
+    return (<div className="mention-list"style={style}>{props.children}</div>)
 }
 
 const mentionAnchorStyle: React.CSSProperties = {    
