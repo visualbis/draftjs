@@ -79,7 +79,7 @@ const PopOverContainer = (props) => {
               overflowY: 'auto',
           }
         : null;
-    return <div style={style}>{props.children}</div>;
+    return <div className="mention-list" style={style}>{props.children}</div>;
 };
 
 const mentionAnchorStyle: React.CSSProperties = {
