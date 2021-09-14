@@ -4,7 +4,7 @@ import '@draft-js-plugins/mention/lib/plugin.css';
 // import { mentionsStyles } from './Styles';
 // import { Editor, createPlugin, pluginUtils } from "draft-extend";
 import { convertToHTML } from 'draft-convert';
-import { convertToRaw, DraftStyleMap, EditorState, RichUtils, SelectionState } from 'draft-js';
+import { convertToRaw, DraftStyleMap, EditorState, Modifier, RichUtils, SelectionState } from 'draft-js';
 import 'draft-js/dist/Draft.css';
 import React, { Component, Fragment, ReactElement } from 'react';
 import { SuggestionList } from './Mention';
@@ -44,6 +44,7 @@ interface IDraftEditorProps {
 export interface IDraftEditorRef {
     setFormat: (formatType: string, value: string) => void;
     setContent: (content: string) => string;
+    insertTextAtCursor: (text: string) => void;
 }
 
 const CUSTOM_STYLE_MAP: DraftStyleMap = {
@@ -79,7 +80,11 @@ const PopOverContainer = (props) => {
               overflowY: 'auto',
           }
         : null;
-    return <div className="mention-list" style={style}>{props.children}</div>;
+    return (
+        <div className="mention-list" style={style}>
+            {props.children}
+        </div>
+    );
 };
 
 const mentionAnchorStyle: React.CSSProperties = {
@@ -104,15 +109,15 @@ const convertToHTMLString = (editorState: EditorState) => {
                 return {
                     start: `<span style="${type}: ${height}">`,
                     end: `</span>`,
-                    empty: '<br/>',
+                    // empty: '<br/>',
                 };
             }
         },
-        blockToHTML: (block) => {
-            if (block.text === '') {
-                return <br />;
-            }
-        },
+        // blockToHTML: (block) => {
+        //     if (block.text === '') {
+        //         return <br />;
+        //     }
+        // },
         entityToHTML: (entity, originalText) => {
             if (entity.type === 'mention') {
                 return (
@@ -355,6 +360,36 @@ class DraftEditor extends Component<IDraftEditorProps, any> {
             return 'handled';
         }
         return 'not-handled';
+    };
+    insertTextAtCursor = (textToInsert: string) => {
+        const { editorState } = this.state;
+
+        const currentContent = editorState.getCurrentContent();
+        const currentSelection = editorState.getSelection();
+
+        let newContent = Modifier.replaceText(currentContent, currentSelection, textToInsert);
+
+        const textToInsertSelection = currentSelection.set(
+            'focusOffset',
+            currentSelection.getFocusOffset() + textToInsert.length,
+        );
+
+        let inlineStyles = editorState.getCurrentInlineStyle();
+
+        inlineStyles.forEach(
+            (inLineStyle) => (newContent = Modifier.applyInlineStyle(newContent, textToInsertSelection, inLineStyle)),
+        );
+
+        let newState = EditorState.push(editorState, newContent, 'insert-characters');
+        newState = EditorState.forceSelection(
+            newState,
+            textToInsertSelection.set('anchorOffset', textToInsertSelection.getAnchorOffset() + textToInsert.length),
+        );
+
+        this.setState({
+            editorState: newState,
+        });
+        return newState;
     };
     render() {
         const { textAlignment, toolbarComponent, peopleSuggestion, isMentionLoading, placeholder } = this.props;
