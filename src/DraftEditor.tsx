@@ -28,6 +28,8 @@ interface IDraftEditorProps {
         value: string;
         mentionList: string[];
         rawValue?: string;
+        backgroundColor?: string;
+        justifyContent?: string;
     }) => void;
     onCurrentFormatChange?: (formats: IDraftElementFormats) => void;
     toolbarComponent?: ReactElement;
@@ -216,11 +218,13 @@ class DraftEditor extends Component<IDraftEditorProps, any> {
                 formatKeys.fontSize,
                 formatKeys.background,
                 formatKeys.lineHeight,
+                formatKeys.justifyContent,
             ].includes(formatType)
         ) {
             nextEditorState = formatText(nextEditorState, formatType, `${formatType}__${value}`);
         } else nextEditorState = RichUtils.toggleInlineStyle(nextEditorState, formatType.toUpperCase());
-        this.updateData(nextEditorState);
+        const format = getFormat(nextEditorState);
+        this.updateData(nextEditorState, format);
     };
 
     onEditorStateChange = (editorStateUpdated: EditorState) => {
@@ -228,9 +232,9 @@ class DraftEditor extends Component<IDraftEditorProps, any> {
         this.updateData(editorStateUpdated);
     };
 
-    updateData = (editorStateUpdated: EditorState) => {
+    updateData = (editorStateUpdated: EditorState, customFormat?: any) => {
         const { onContentTextChange, onContentChange } = this.props;
-        const { peopleSearchOpen } = this.state;
+        const { peopleSearchOpen, format } = this.state;
         this.setState({
             editorState: editorStateUpdated,
         });
@@ -256,6 +260,8 @@ class DraftEditor extends Component<IDraftEditorProps, any> {
             value: htmlText,
             mentionList,
             rawValue: getContentFromEditorState(editorStateUpdated),
+            backgroundColor: customFormat?.backgroundColor ?? format?.backgroundColor,
+            justifyContent: customFormat?.justifyContent ?? format?.justifyContent,
         });
         onContentChange?.(htmlText);
     };

@@ -17,6 +17,7 @@ export interface IDraftElementFormats {
     enableBorder?: boolean;
     borderColor?: string;
     backgroundColor?: string;
+    justifyContent?: string;
 }
 
 const resolveCustomStyleMap = (style: DraftInlineStyle) => {
@@ -119,6 +120,9 @@ const convertFromHTMLString = (html: string): Draft.ContentState => {
                 }
                 if (node.style.lineHeight) {
                     currentStyle = currentStyle.add(`${formatKeys.lineHeight}__${node.style.lineHeight}`);
+                }
+                if (node.style.justifyContent) {
+                    currentStyle = currentStyle.add(`${formatKeys.justifyContent}__${node.style.justifyContent}`);
                 }
                 if (node.tagName === 'SUB') {
                     currentStyle = currentStyle.add(formatKeys.subScript.toUpperCase());

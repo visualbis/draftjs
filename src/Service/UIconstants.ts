@@ -14,6 +14,7 @@ export const formatKeys = {
     underline: 'underline',
     subScript: 'subscript',
     superScript: 'superScript',
+    justifyContent: 'justify-content',
 };
 
 export const styleValues = [
@@ -37,5 +38,9 @@ export const styleValues = [
     {
         key: `${formatKeys.lineHeight}__`,
         value: 'lineHeight',
+    },
+    {
+        key: `${formatKeys.justifyContent}__`,
+        value: 'justifyContent',
     },
 ];
