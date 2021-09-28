@@ -43,10 +43,10 @@
     background-color: #cce7ff;
   }
   
-  .mentionSuggestionsEntryFocused {
+  /* .mentionSuggestionsEntryFocused {
     composes: mentionSuggestionsEntry;
     background-color: #e6f3ff;
-  }
+  } */
   
   .mentionSuggestionsEntryText,
   .mentionSuggestionsEntryTitle {

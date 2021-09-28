@@ -62,9 +62,9 @@ const MENTION_SUGGESTION_NAME = {
     PREFIX_TWO: '#',
 };
 
-const PopOverContainer = (props) => {
+const PopOverContainer =(isMentionLoading:boolean = false) => (props) => {
     const boundingRect = props.store.getReferenceElement()?.getBoundingClientRect();
-    if (!boundingRect) {
+    if (!boundingRect || isMentionLoading) {
         return null;
     }
     const style: React.CSSProperties = boundingRect
@@ -149,10 +149,12 @@ const convertToHTMLString = (editorState: EditorState) => {
 };
 class DraftEditor extends Component<IDraftEditorProps, any> {
     private mentionSuggestionList: any;
+    private editorRef:any;
     constructor(props: IDraftEditorProps) {
         super(props);
         const { initialContent, peopleSuggestion, showMention } = props;
         this.mentionSuggestionList = null;
+        // this.editorRef =  React.createRef();
         this.state = {
             editorState: EditorState.createWithContent(convertFromHTMLString(initialContent)),
             currentFormat: null,
@@ -183,6 +185,10 @@ class DraftEditor extends Component<IDraftEditorProps, any> {
         this.updateData(updatedEditorState);
         return getContentFromEditorState(updatedEditorState);
     };
+
+    // componentDidMount() {
+    //     this.editorRef.current!.focus();
+    // }
 
     getSelection = () => {
         const { editorState } = this.state;
@@ -333,7 +339,7 @@ class DraftEditor extends Component<IDraftEditorProps, any> {
             ValueSuggestion,
         };
         return this.mentionSuggestionList;
-    };
+    };    
 
     onOpenChange = (searchKey: string) => (_open: boolean) => {
         this.setState({ [searchKey]: _open });
@@ -366,7 +372,7 @@ class DraftEditor extends Component<IDraftEditorProps, any> {
             <Fragment>
                 {toolbarComponent &&
                     React.cloneElement(toolbarComponent, { currentFormat: format, setFormat: this.setFormat })}
-                <Editor
+                <Editor                    
                     customStyleFn={resolveCustomStyleMap}
                     preserveSelectionOnBlur
                     stripPastedStyles
@@ -395,11 +401,8 @@ class DraftEditor extends Component<IDraftEditorProps, any> {
                         onOpenChange={this.onOpenChange('peopleSearchOpen')}
                         suggestions={peopleSuggestion}
                         onSearchChange={this.onSearchChange}
-                        entryComponent={SuggestionList}
-                        // onAddMention={() => {
-                        //     this.onOpenChange('peopleSearchOpen')(false)
-                        // }}
-                        popoverContainer={PopOverContainer}
+                        entryComponent={SuggestionList}                 
+                        popoverContainer={PopOverContainer(isMentionLoading)}
                     />
                 )}
                 {ValueMentionComp && (
@@ -407,16 +410,11 @@ class DraftEditor extends Component<IDraftEditorProps, any> {
                         open={valueSearchOpen}
                         onOpenChange={this.onOpenChange('valueSearchOpen')}
                         suggestions={suggestions}
-                        onSearchChange={this.onSearchChange}
-                        // onAddMention={() => {
-                        //     this.onOpenChange('valueSearchOpen')(false)
-                        // }}
+                        onSearchChange={this.onSearchChange}                  
                         entryComponent={SuggestionList}
-                        popoverContainer={PopOverContainer}
+                        popoverContainer={PopOverContainer()}
                     />
                 )}
-                {/* </div> */}
-                {/* </>             */}
             </Fragment>
         );
     }
