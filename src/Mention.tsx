@@ -45,9 +45,9 @@ export const  SuggestionList =(props: EntryComponentProps): ReactElement =>{
     isFocused, // eslint-disable-line @typescript-eslint/no-unused-vars
     ...parentProps
   } = props;
-
+  
   return (
-    <div {...parentProps} >
+    <div {...parentProps} className={`list_container_item ${isFocused ? 'focused' : ''}`} >
       <div className={`${theme?.mentionSuggestionsEntryContainer} ${"list_item"}`}>
         {mention.avatar &&
         <div className={`${theme?.mentionSuggestionsEntryContainerLeft} ${"list_icon"}`}>
