@@ -4,7 +4,7 @@ import '@draft-js-plugins/mention/lib/plugin.css';
 // import { mentionsStyles } from './Styles';
 // import { Editor, createPlugin, pluginUtils } from "draft-extend";
 import { convertToHTML } from 'draft-convert';
-import { convertToRaw, DraftStyleMap, EditorState, Modifier, RichUtils, SelectionState } from 'draft-js';
+import { convertToRaw, DraftStyleMap, EditorState, getDefaultKeyBinding, KeyBindingUtil, RichUtils, SelectionState, Modifier } from 'draft-js';
 import 'draft-js/dist/Draft.css';
 import React, { Component, Fragment, ReactElement } from 'react';
 import { SuggestionList } from './Mention';
@@ -41,6 +41,7 @@ interface IDraftEditorProps {
     valueSuggestion?: any[];
     isMentionLoading?: boolean;
     placeholder?: string;
+    submit?:() => void;
 }
 
 export interface IDraftEditorRef {
@@ -67,7 +68,7 @@ const MENTION_SUGGESTION_NAME = {
 
 const PopOverContainer =(isMentionLoading:boolean = false) => (props) => {
     const boundingRect = props.store.getReferenceElement()?.getBoundingClientRect();
-    if (!boundingRect || isMentionLoading) {
+    if (!boundingRect ) {
         return null;
     }
     const style: React.CSSProperties = boundingRect
@@ -283,6 +284,9 @@ class DraftEditor extends Component<IDraftEditorProps, any> {
     };
 
     handleKeyCommand = (command: string, editorStateUpdated: EditorState) => {
+        if(command === 'submit' && this.props.submit) {
+            this.props.submit();
+        }
         const newState = RichUtils.handleKeyCommand(editorStateUpdated, command);
         if (newState) {
             this.updateData(newState);
@@ -373,6 +377,11 @@ class DraftEditor extends Component<IDraftEditorProps, any> {
         }
         return 'not-handled';
     };
+
+    keyBindingFn = (event) => {
+        if (KeyBindingUtil.hasCommandModifier(event) && event.keyCode === 13) { return 'submit'; }
+        return getDefaultKeyBinding(event);
+    }
     insertTextAtCursor = (textToInsert: string) => {
         const { editorState } = this.state;
 
@@ -425,13 +434,10 @@ class DraftEditor extends Component<IDraftEditorProps, any> {
                     customStyleMap={CUSTOM_STYLE_MAP}
                     plugins={this.mentionSuggestionList?.plugins}
                     handleReturn={this.handleReturn}
+                    keyBindingFn={this.keyBindingFn}
                 />
                 <div className="list_container">
-                    {peopleSearchOpen && isMentionLoading && (
-                        <ul>
-                            <div className="menu-loading"></div>
-                        </ul>
-                    )}
+                  
                     {peopleSearchOpen && !isMentionLoading && peopleSuggestion.length === 0 && (
                         <ul style={{ padding: '0 10px' }}>No Data found</ul>
                     )}
