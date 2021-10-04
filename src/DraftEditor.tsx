@@ -126,7 +126,7 @@ const convertToHTMLString = (editorState: EditorState) => {
                 return (
                     <span
                         className="mention"
-                        style={{ ...mentionAnchorStyle, color: '#ba55d3' }}
+                        style={{ ...mentionAnchorStyle, color: '#0078d4' }}
                         data-value={JSON.stringify({
                             ...entity.data.mention,
                             image: '',
