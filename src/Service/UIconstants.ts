@@ -1,3 +1,5 @@
+import { DraftStyleMap } from 'draft-js';
+
 export const TB = {
     FONT_BOLD: 'fontBold-b',
     FONT_FAMILY: 'fontSizeIncrement-b',
@@ -44,3 +46,26 @@ export const styleValues = [
         value: 'justifyContent',
     },
 ];
+
+export const CUSTOM_STYLE_MAP: DraftStyleMap = {
+    SUPERSCRIPT: {
+        verticalAlign: 'super',
+        fontSize: 'smaller',
+    },
+    SUBSCRIPT: {
+        verticalAlign: 'sub',
+        fontSize: 'smaller',
+    },
+};
+
+export const MENTION_SUGGESTION_NAME = {
+    PREFIX_ONE: '@',
+    PREFIX_TWO: '#',
+};
+
+export const mentionAnchorStyle: React.CSSProperties = {
+    paddingLeft: '2px',
+    paddingRight: '2px',
+    borderRadius: '2px',
+    textDecoration: 'none',
+};
