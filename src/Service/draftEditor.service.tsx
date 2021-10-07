@@ -1,7 +1,8 @@
-import { convertFromHTML } from 'draft-convert';
+import { convertFromHTML, convertToHTML } from 'draft-convert';
 import { convertToRaw, DraftInlineStyle, EditorState, Modifier, RichUtils } from 'draft-js';
 import draftToHtml from 'draftjs-to-html';
-import { formatKeys, styleValues } from './UIconstants';
+import React from 'react';
+import { formatKeys, mentionAnchorStyle, styleValues } from './UIconstants';
 
 export interface IDraftElementFormats {
     font?: string;
@@ -145,4 +146,65 @@ const convertFromHTMLString = (html: string): Draft.ContentState => {
     })(html);
 };
 
-export { convertFromHTMLString, resolveCustomStyleMap, formatText, getFormat, getContentFromEditorState };
+const convertToHTMLString = (editorState: EditorState) => {
+    return convertToHTML({
+        styleToHTML: (style) => {
+            if (style === formatKeys.bold.toUpperCase()) {
+                return <b />;
+            } else if (style === formatKeys.italic.toUpperCase()) {
+                return <em />;
+            } else if (style === formatKeys.superScript.toUpperCase()) {
+                return <sup />;
+            } else if (style === formatKeys.subScript.toUpperCase()) {
+                return <sub />;
+            } else if (style.includes('__')) {
+                const [type, height] = style.split('__');
+                return {
+                    start: `<span style="${type}: ${height}">`,
+                    end: `</span>`,
+                };
+            }
+        },
+        entityToHTML: (entity, originalText) => {
+            if (entity.type === 'mention') {
+                return (
+                    <span
+                        className="mention"
+                        style={{ ...mentionAnchorStyle }}
+                        data-value={JSON.stringify({
+                            ...entity.data.mention,
+                            image: '',
+                            avatar: '',
+                        })}
+                    >
+                        {originalText}
+                    </span>
+                );
+            } else if (entity.type === '#mention') {
+                return (
+                    <span
+                        className="hash-mention"
+                        style={{ ...mentionAnchorStyle }}
+                        data-value={JSON.stringify({
+                            ...entity.data.mention,
+                            image: '',
+                            avatar: '',
+                        })}
+                    >
+                        {originalText}
+                    </span>
+                );
+            }
+            return originalText;
+        },
+    })(editorState.getCurrentContent());
+};
+
+export {
+    convertFromHTMLString,
+    resolveCustomStyleMap,
+    formatText,
+    getFormat,
+    getContentFromEditorState,
+    convertToHTMLString,
+};
