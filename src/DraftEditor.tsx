@@ -86,7 +86,6 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         if (showMention && (showMention.people || showMention.value)) {
             this.MentionComponents();
         }
-        this.updateData(this.state.editorState);
     }
 
     sendFormat = (nextEditorState: EditorState) => {
