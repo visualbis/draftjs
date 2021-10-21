@@ -49,6 +49,8 @@ interface IDraftEditorProps {
     isMentionLoading?: boolean;
     placeholder?: string;
     submit?: () => void;
+    readOnly?: boolean;
+    entitySelectionAsWhole?: boolean;
 }
 
 export interface IDraftEditorRef {
@@ -68,10 +70,12 @@ interface IDraftEditorState {
 
 class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
     private mentionSuggestionList: any;
+    private editorRef: React.RefObject<Editor>;
     constructor(props: IDraftEditorProps) {
         super(props);
         const { initialContent, showMention } = props;
         this.mentionSuggestionList = null;
+        this.editorRef = React.createRef();
         this.state = {
             editorState: EditorState.createWithContent(convertFromHTMLString(initialContent)),
             format: null,
@@ -137,6 +141,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         } else nextEditorState = RichUtils.toggleInlineStyle(nextEditorState, formatType.toUpperCase());
         const format = getFormat(nextEditorState);
         this.updateData(nextEditorState, format);
+        this.editorRef.current?.focus();
     };
 
     onEditorStateChange = (editorStateUpdated: EditorState) => {
@@ -145,6 +150,32 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
     };
 
     updateData = (editorStateUpdated: EditorState, customFormat?: any) => {
+        const selection = editorStateUpdated.getSelection();
+        if (this.props.entitySelectionAsWhole && selection?.getHasFocus()) {
+            const content = editorStateUpdated.getCurrentContent();
+            const startKey = selection.getStartKey();
+            const startOffset = selection.getStartOffset();
+            const block = content.getBlockForKey(startKey);
+            const currentEntityKey = block.getEntityAt(startOffset);
+            block.findEntityRanges(
+                (charData) => {
+                    const entityKey = charData.getEntity();
+                    if (!entityKey) return false;
+                    return entityKey === currentEntityKey;
+                },
+                (start, end) => {
+                    const entitySelection = new SelectionState({
+                        anchorKey: block.getKey(),
+                        focusKey: block.getKey(),
+                        anchorOffset: start,
+                        focusOffset: end,
+                    });
+                    let newSelectionState = new SelectionState(entitySelection);
+                    editorStateUpdated = EditorState.forceSelection(editorStateUpdated, newSelectionState);
+                    return;
+                },
+            );
+        }
         const { onContentTextChange, onContentChange } = this.props;
         const { peopleSearchOpen, format } = this.state;
         this.setState({
@@ -267,7 +298,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
     onSearchChange = ({ trigger, value }: { trigger: string; value: string }) => {
         const { onMentionInput, valueSuggestion } = this.props;
         if (trigger === MENTION_SUGGESTION_NAME.PREFIX_ONE) {
-            onMentionInput(value);
+            onMentionInput?.(value);
         } else {
             this.setState({
                 suggestions: defaultSuggestionsFilter(value, valueSuggestion),
@@ -332,7 +363,8 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         this.updateData(EditorState.push(editorState, stateWithText, 'insert-fragment'));
     };
     render() {
-        const { textAlignment, toolbarComponent, peopleSuggestion, isMentionLoading, placeholder } = this.props;
+        const { textAlignment, toolbarComponent, peopleSuggestion, isMentionLoading, placeholder, readOnly } =
+            this.props;
         const { editorState, peopleSearchOpen, valueSearchOpen, suggestions, format } = this.state;
         const MentionComp = this.mentionSuggestionList?.MentionSuggestions;
         const ValueMentionComp = this.mentionSuggestionList?.ValueSuggestion;
@@ -342,6 +374,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
                 {toolbarComponent &&
                     React.cloneElement(toolbarComponent, { currentFormat: format, setFormat: this.setFormat })}
                 <Editor
+                    ref={this.editorRef}
                     customStyleFn={resolveCustomStyleMap}
                     preserveSelectionOnBlur
                     stripPastedStyles
@@ -354,9 +387,10 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
                     plugins={this.mentionSuggestionList?.plugins}
                     handleReturn={this.handleReturn}
                     keyBindingFn={this.keyBindingFn}
+                    readOnly={readOnly}
                 />
                 <div className="list_container">
-                    {peopleSearchOpen && !isMentionLoading && peopleSuggestion.length === 0 && (
+                    {peopleSearchOpen && !isMentionLoading && peopleSuggestion?.length === 0 && (
                         <ul style={{ padding: '0 10px' }}>No Data found</ul>
                     )}
                 </div>
@@ -364,7 +398,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
                     <MentionComp
                         open={peopleSearchOpen}
                         onOpenChange={this.onOpenChange('peopleSearchOpen')}
-                        suggestions={peopleSuggestion}
+                        suggestions={peopleSuggestion || []}
                         onSearchChange={this.onSearchChange}
                         entryComponent={SuggestionList}
                         popoverContainer={PopOverContainer}
