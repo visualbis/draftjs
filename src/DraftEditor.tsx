@@ -51,6 +51,7 @@ interface IDraftEditorProps {
     submit?: () => void;
     readOnly?: boolean;
     entitySelectionAsWhole?: boolean;
+    isColorRequired?:boolean;
 }
 
 export interface IDraftEditorRef {
@@ -197,7 +198,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
             });
         });
         const value = rawData.blocks.map((block) => (!block.text.trim() && '\n') || block.text).join('\n');
-        const htmlText = convertToHTMLString(editorStateUpdated);
+        const htmlText = convertToHTMLString(editorStateUpdated, this.props.isColorRequired);
         onContentTextChange?.({
             formattedText: value,
             value: htmlText,
@@ -210,7 +211,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
     };
 
     onEditorTextChange = (editorStateUpdated: EditorState) => {
-        const html = convertToHTMLString(editorStateUpdated);
+        const html = convertToHTMLString(editorStateUpdated, this.props.isColorRequired);
         const editorState = EditorState.createWithContent(convertFromHTMLString(html));
 
         this.setState({

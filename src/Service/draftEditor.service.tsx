@@ -140,13 +140,13 @@ const convertFromHTMLString = (html: string): Draft.ContentState => {
                 return createEntity('mention', 'IMMUTABLE', { mention: { name: data.name, ...data } });
             } else if (nodeName === 'span' && node.classList.contains('hash-mention')) {
                 const data = JSON.parse(node.dataset.value);
-                return createEntity('mention', 'IMMUTABLE', { mention: { name: data.name, ...data } });
+                return createEntity('#mention', 'IMMUTABLE', { mention: { name: data.name, ...data } });
             }
         },
     })(html);
 };
 
-const convertToHTMLString = (editorState: EditorState) => {
+const convertToHTMLString = (editorState: EditorState, isColorRequired:boolean = false) => {
     return convertToHTML({
         styleToHTML: (style) => {
             if (style === formatKeys.bold.toUpperCase()) {
@@ -170,7 +170,7 @@ const convertToHTMLString = (editorState: EditorState) => {
                 return (
                     <span
                         className="mention"
-                        style={{ ...mentionAnchorStyle }}
+                        style={{ ...mentionAnchorStyle, color: isColorRequired ? '#0078d4' : null }}
                         data-value={JSON.stringify({
                             ...entity.data.mention,
                             image: '',
