@@ -51,7 +51,7 @@ interface IDraftEditorProps {
     submit?: () => void;
     readOnly?: boolean;
     entitySelectionAsWhole?: boolean;
-    isColorRequired?:boolean;
+    isColorRequired?: boolean;
 }
 
 export interface IDraftEditorRef {
@@ -93,13 +93,11 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         const { format: prevFormat } = this.state;
         const { onCurrentFormatChange } = this.props;
         const format = getFormat(nextEditorState);
-        this.setState({
-            format: {
-                ...prevFormat,
-                ...format,
-            },
-        });
         onCurrentFormatChange?.(format);
+        return {
+            ...prevFormat,
+            ...format,
+        };
     };
 
     setContent = (content: string) => {
@@ -122,6 +120,12 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
     };
 
     setFormat = (formatType: string, value: string) => {
+        /* ** DO NOT MOVE THE FOCUS BELOW AS ITS RESETTING 
+        THE STATE BY CALLING EDITOR STATE CHANGE
+        AND RERENDERING THE ENTIRE COMPONENNT ** */
+
+        this.editorRef.current?.focus();
+
         const { editorState } = this.state;
         let nextEditorState = editorState;
         const selection = this.getSelection();
@@ -142,7 +146,6 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         } else nextEditorState = RichUtils.toggleInlineStyle(nextEditorState, formatType.toUpperCase());
         const format = getFormat(nextEditorState);
         this.updateData(nextEditorState, format);
-        this.editorRef.current?.focus();
     };
 
     onEditorStateChange = (editorStateUpdated: EditorState) => {
@@ -179,35 +182,35 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         }
         const { onContentTextChange, onContentChange } = this.props;
         const { peopleSearchOpen, format } = this.state;
-        this.setState({
-            editorState: editorStateUpdated,
-        });
-        this.sendFormat(editorStateUpdated);
-        if (peopleSearchOpen) {
-            return;
-        }
-        const rawData = convertToRaw(editorStateUpdated.getCurrentContent());
-        const mentionList = [];
-        Object.keys(rawData.entityMap).forEach((key) => {
-            if (rawData.entityMap[key].type === '#mention') {
-                return;
-            }
-            mentionList.push({
-                emailAddress: rawData.entityMap[key]?.data?.mention?.value,
-                fullName: rawData.entityMap[key]?.data?.mention?.name,
+        const formatState = this.sendFormat(editorStateUpdated);
+        if (!peopleSearchOpen) {
+            const rawData = convertToRaw(editorStateUpdated.getCurrentContent());
+            const mentionList = [];
+            Object.keys(rawData.entityMap).forEach((key) => {
+                if (rawData.entityMap[key].type === '#mention') {
+                    return;
+                }
+                mentionList.push({
+                    emailAddress: rawData.entityMap[key]?.data?.mention?.value,
+                    fullName: rawData.entityMap[key]?.data?.mention?.name,
+                });
             });
-        });
-        const value = rawData.blocks.map((block) => (!block.text.trim() && '\n') || block.text).join('\n');
-        const htmlText = convertToHTMLString(editorStateUpdated, this.props.isColorRequired);
-        onContentTextChange?.({
-            formattedText: value,
-            value: htmlText,
-            mentionList,
-            rawValue: getContentFromEditorState(editorStateUpdated),
-            backgroundColor: customFormat?.backgroundColor ?? format?.backgroundColor,
-            justifyContent: customFormat?.justifyContent ?? format?.justifyContent,
-        });
-        onContentChange?.(htmlText);
+            const value = rawData.blocks.map((block) => (!block.text.trim() && '\n') || block.text).join('\n');
+            const htmlText = convertToHTMLString(editorStateUpdated, this.props.isColorRequired);
+            this.setState({
+                editorState: editorStateUpdated,
+                format: formatState,
+            });
+            onContentTextChange?.({
+                formattedText: value,
+                value: htmlText,
+                mentionList,
+                rawValue: getContentFromEditorState(editorStateUpdated),
+                backgroundColor: customFormat?.backgroundColor ?? format?.backgroundColor,
+                justifyContent: customFormat?.justifyContent ?? format?.justifyContent,
+            });
+            onContentChange?.(htmlText);
+        }
     };
 
     onEditorTextChange = (editorStateUpdated: EditorState) => {
