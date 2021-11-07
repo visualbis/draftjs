@@ -1,5 +1,5 @@
 import { default as Editor } from '@draft-js-plugins/editor';
-import createMentionPlugin, { defaultSuggestionsFilter } from '@draft-js-plugins/mention';
+import createMentionPlugin from '@draft-js-plugins/mention';
 import '@draft-js-plugins/mention/lib/plugin.css';
 import {
     convertToRaw,
@@ -299,13 +299,25 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
     onOpenChange = (searchKey: string) => (_open: boolean) => {
         this.setState({ [searchKey]: _open } as Partial<IDraftEditorState>);
     };
+
+    onCustomSuggestionsFilter = (searchValue: string, suggestions: any[]) => {
+        const size = (list) => (list.constructor.name === 'List' ? list.size : list.length);
+        const get = (obj, attr) => (obj.get ? obj.get(attr) : obj[attr]);
+        const value = searchValue.toLowerCase();
+        const filteredSuggestions = suggestions.filter(
+            (suggestion) => !value || get(suggestion, 'name').toLowerCase().indexOf(value) > -1,
+        );
+        const length = size(filteredSuggestions) < 15 ? size(filteredSuggestions) : 15;
+        return filteredSuggestions.slice(0, length);
+    };
+
     onSearchChange = ({ trigger, value }: { trigger: string; value: string }) => {
         const { onMentionInput, valueSuggestion } = this.props;
         if (trigger === MENTION_SUGGESTION_NAME.PREFIX_ONE) {
             onMentionInput?.(value);
         } else {
             this.setState({
-                suggestions: defaultSuggestionsFilter(value, valueSuggestion),
+                suggestions: this.onCustomSuggestionsFilter(value, valueSuggestion),
             });
         }
     };
