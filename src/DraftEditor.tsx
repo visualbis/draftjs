@@ -52,6 +52,7 @@ interface IDraftEditorProps {
     readOnly?: boolean;
     entitySelectionAsWhole?: boolean;
     isColorRequired?: boolean;
+    formatAllWhenNoneSelected?: boolean;
 }
 
 export interface IDraftEditorRef {
@@ -106,8 +107,8 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         return getContentFromEditorState(updatedEditorState);
     };
 
-    getSelection = () => {
-        const { editorState } = this.state;
+    getSelection = (editor?: EditorState) => {
+        let editorState = editor ?? this.state.editorState;
         const selection = editorState.getSelection();
         const anchorKey = selection.getAnchorKey();
         const currentContent = editorState.getCurrentContent();
@@ -129,7 +130,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         const { editorState } = this.state;
         let nextEditorState = editorState;
         const selection = this.getSelection();
-        if (!selection) {
+        if (!selection && this.props.formatAllWhenNoneSelected) {
             nextEditorState = this.selectAll();
         }
         if (
