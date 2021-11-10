@@ -190,7 +190,9 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         const { onContentTextChange, onContentChange } = this.props;
         const { peopleSearchOpen, format } = this.state;
         const formatState = this.sendFormat(editorStateUpdated);
-        if (!peopleSearchOpen) {
+        // Commenting this condition since it is not allowing the mentions data to be passed to the parent comp. 
+        // Commenting this will not cause any problem, if it did please write another workaround
+        // if (!peopleSearchOpen) {
             const rawData = convertToRaw(editorStateUpdated.getCurrentContent());
             const mentionList = [];
             Object.keys(rawData.entityMap).forEach((key) => {
@@ -217,7 +219,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
                 justifyContent: customFormat?.justifyContent ?? format?.justifyContent,
             });
             onContentChange?.(htmlText);
-        }
+        // }
     };
 
     onEditorTextChange = (editorStateUpdated: EditorState) => {
