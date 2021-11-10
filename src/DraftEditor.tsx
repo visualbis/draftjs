@@ -190,8 +190,8 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         const { onContentTextChange, onContentChange } = this.props;
         const { peopleSearchOpen, format } = this.state;
         const formatState = this.sendFormat(editorStateUpdated);
-        // Commenting this condition since it is not allowing mentions data to be passed to parent comp. 
-        // Commenting this will not cause any problem, if it did plase write another workaround
+        // Commenting this condition since it is not allowing the mentions data to be passed to the parent comp. 
+        // Commenting this will not cause any problem, if it did please write another workaround
         // if (!peopleSearchOpen) {
             const rawData = convertToRaw(editorStateUpdated.getCurrentContent());
             const mentionList = [];
