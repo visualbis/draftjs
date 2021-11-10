@@ -89,6 +89,12 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
             this.MentionComponents();
         }
     }
+    
+    UNSAFE_componentWillReceiveProps(newProps) {
+        if(newProps.initialContent==='') {
+            this.setState({editorState: EditorState.createWithContent(convertFromHTMLString(""))})
+        }
+    }
 
     sendFormat = (nextEditorState: EditorState) => {
         const { format: prevFormat } = this.state;
