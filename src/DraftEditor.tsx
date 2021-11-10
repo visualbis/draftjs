@@ -92,7 +92,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
     
     UNSAFE_componentWillReceiveProps(newProps) {
         if(newProps.initialContent==='') {
-            this.setState({editorState: EditorState.createWithContent(convertFromHTMLString("")),})
+            this.setState({editorState: EditorState.createWithContent(convertFromHTMLString(""))})
         }
     }
 
