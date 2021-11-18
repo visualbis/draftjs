@@ -89,6 +89,10 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
             this.MentionComponents();
         }
     }
+
+    componentDidMount() {
+        this.editorRef.current.focus();
+    }
     
     UNSAFE_componentWillReceiveProps(newProps) {
         if(newProps.initialContent==='') {
