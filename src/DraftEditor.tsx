@@ -52,6 +52,7 @@ interface IDraftEditorProps {
     readOnly?: boolean;
     entitySelectionAsWhole?: boolean;
     isColorRequired?:boolean;
+    valueMentionTrigger?:() => void; 
 }
 
 export interface IDraftEditorRef {
@@ -319,7 +320,11 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         if (KeyBindingUtil.hasCommandModifier(event) && event.keyCode === 13) {
             return 'submit';
         }
-        return getDefaultKeyBinding(event);
+        if (event.keyCode === 51) { // if # trigger selection
+            this.props.valueMentionTrigger && this.props.valueMentionTrigger();
+        }
+
+        return  (event);
     };
     insertTextAtCursor = (textToInsert: string) => {
         const { editorState } = this.state;
@@ -405,7 +410,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
                         popoverContainer={PopOverContainer}
                     />
                 )}
-                {ValueMentionComp && (
+                {/* {ValueMentionComp && (
                     <ValueMentionComp
                         open={valueSearchOpen}
                         onOpenChange={this.onOpenChange('valueSearchOpen')}
@@ -414,7 +419,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
                         entryComponent={SuggestionList}
                         popoverContainer={PopOverContainer}
                     />
-                )}
+                )} */}
             </Fragment>
         );
     }
