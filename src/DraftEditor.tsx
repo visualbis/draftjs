@@ -53,6 +53,7 @@ interface IDraftEditorProps {
     entitySelectionAsWhole?: boolean;
     isColorRequired?: boolean;
     formatAllWhenNoneSelected?: boolean;
+    onFocus?:boolean;
 }
 
 export interface IDraftEditorRef {
@@ -72,7 +73,7 @@ interface IDraftEditorState {
 
 class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
     private mentionSuggestionList: any;
-    private editorRef: React.RefObject<Editor>;
+    public editorRef: React.RefObject<Editor>;
     constructor(props: IDraftEditorProps) {
         super(props);
         const { initialContent, showMention } = props;
@@ -125,6 +126,13 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         const selectedText = currentBlock.getText().slice(start, end);
         return selectedText;
     };
+
+    componentDidMount() {
+        const { onFocus } = this.props;
+        if(onFocus) {
+            this.editorRef.current.focus();
+        }
+    }
 
     setFormat = (formatType: string, value: string) => {
         /* ** DO NOT MOVE THE FOCUS BELOW AS ITS RESETTING 
