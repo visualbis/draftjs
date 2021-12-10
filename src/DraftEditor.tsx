@@ -126,11 +126,32 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         const selectedText = currentBlock.getText().slice(start, end);
         return selectedText;
     };
+    moveSelectionToEnd = editorState => {
+        const content = editorState.getCurrentContent();
+        const blockMap = content.getBlockMap();
+      
+        const key = blockMap.last().getKey();
+        const length = blockMap.last().getLength();
+      
+        // On Chrome and Safari, calling focus on contenteditable focuses the
+        // cursor at the first character. This is something you don't expect when
+        // you're clicking on an input element but not directly on a character.
+        // Put the cursor back where it was before the blur.
+        const selection = new SelectionState({
+          anchorKey: key,
+          anchorOffset: length,
+          focusKey: key,
+          focusOffset: length,
+        });
+        return EditorState.forceSelection(editorState, selection);
+      };
 
     componentDidMount() {
         const { onFocus } = this.props;
+        const { editorState } = this.state;
         if(onFocus) {
-            this.editorRef.current.focus();
+            const updatedEditorState = this.moveSelectionToEnd(editorState);
+            this.setState({ editorState: updatedEditorState})
         }
     }
 
