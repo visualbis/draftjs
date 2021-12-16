@@ -1,5 +1,5 @@
 import { default as Editor } from '@draft-js-plugins/editor';
-import createMentionPlugin, { defaultSuggestionsFilter } from '@draft-js-plugins/mention';
+import createMentionPlugin from '@draft-js-plugins/mention';
 import '@draft-js-plugins/mention/lib/plugin.css';
 import {
     convertToRaw,
@@ -53,6 +53,8 @@ interface IDraftEditorProps {
     entitySelectionAsWhole?: boolean;
     isColorRequired?:boolean;
     valueMentionTrigger?:() => void; 
+    formatAllWhenNoneSelected?: boolean;
+    onFocus?:boolean;
 }
 
 export interface IDraftEditorRef {
@@ -72,7 +74,7 @@ interface IDraftEditorState {
 
 class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
     private mentionSuggestionList: any;
-    private editorRef: React.RefObject<Editor>;
+    public editorRef: React.RefObject<Editor>;
     constructor(props: IDraftEditorProps) {
         super(props);
         const { initialContent, showMention } = props;
@@ -89,18 +91,22 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
             this.MentionComponents();
         }
     }
+    
+    UNSAFE_componentWillReceiveProps(newProps) {
+        if(newProps.initialContent==='') {
+            this.setState({editorState: EditorState.createWithContent(convertFromHTMLString(""))})
+        }
+    }
 
     sendFormat = (nextEditorState: EditorState) => {
         const { format: prevFormat } = this.state;
         const { onCurrentFormatChange } = this.props;
         const format = getFormat(nextEditorState);
-        this.setState({
-            format: {
-                ...prevFormat,
-                ...format,
-            },
-        });
         onCurrentFormatChange?.(format);
+        return {
+            ...prevFormat,
+            ...format,
+        };
     };
 
     setContent = (content: string) => {
@@ -109,8 +115,8 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         return getContentFromEditorState(updatedEditorState);
     };
 
-    getSelection = () => {
-        const { editorState } = this.state;
+    getSelection = (editor?: EditorState) => {
+        let editorState = editor ?? this.state.editorState;
         const selection = editorState.getSelection();
         const anchorKey = selection.getAnchorKey();
         const currentContent = editorState.getCurrentContent();
@@ -121,12 +127,46 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         const selectedText = currentBlock.getText().slice(start, end);
         return selectedText;
     };
+    moveSelectionToEnd = editorState => {
+        const content = editorState.getCurrentContent();
+        const blockMap = content.getBlockMap();
+      
+        const key = blockMap.last().getKey();
+        const length = blockMap.last().getLength();
+      
+        // On Chrome and Safari, calling focus on contenteditable focuses the
+        // cursor at the first character. This is something you don't expect when
+        // you're clicking on an input element but not directly on a character.
+        // Put the cursor back where it was before the blur.
+        const selection = new SelectionState({
+          anchorKey: key,
+          anchorOffset: length,
+          focusKey: key,
+          focusOffset: length,
+        });
+        return EditorState.forceSelection(editorState, selection);
+      };
+
+    componentDidMount() {
+        const { onFocus } = this.props;
+        const { editorState } = this.state;
+        if(onFocus) {
+            const updatedEditorState = this.moveSelectionToEnd(editorState);
+            this.setState({ editorState: updatedEditorState})
+        }
+    }
 
     setFormat = (formatType: string, value: string) => {
+        /* ** DO NOT MOVE THE FOCUS BELOW AS ITS RESETTING 
+        THE STATE BY CALLING EDITOR STATE CHANGE
+        AND RERENDERING THE ENTIRE COMPONENNT ** */
+
+        this.editorRef.current?.focus();
+
         const { editorState } = this.state;
         let nextEditorState = editorState;
         const selection = this.getSelection();
-        if (!selection) {
+        if (!selection && this.props.formatAllWhenNoneSelected) {
             nextEditorState = this.selectAll();
         }
         if (
@@ -143,7 +183,6 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         } else nextEditorState = RichUtils.toggleInlineStyle(nextEditorState, formatType.toUpperCase());
         const format = getFormat(nextEditorState);
         this.updateData(nextEditorState, format);
-        this.editorRef.current?.focus();
     };
 
     onEditorStateChange = (editorStateUpdated: EditorState) => {
@@ -180,35 +219,37 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         }
         const { onContentTextChange, onContentChange } = this.props;
         const { peopleSearchOpen, format } = this.state;
-        this.setState({
-            editorState: editorStateUpdated,
-        });
-        this.sendFormat(editorStateUpdated);
-        if (peopleSearchOpen) {
-            return;
-        }
-        const rawData = convertToRaw(editorStateUpdated.getCurrentContent());
-        const mentionList = [];
-        Object.keys(rawData.entityMap).forEach((key) => {
-            if (rawData.entityMap[key].type === '#mention') {
-                return;
-            }
-            mentionList.push({
-                emailAddress: rawData.entityMap[key]?.data?.mention?.value,
-                fullName: rawData.entityMap[key]?.data?.mention?.name,
+        const formatState = this.sendFormat(editorStateUpdated);
+        // Commenting this condition since it is not allowing the mentions data to be passed to the parent comp. 
+        // Commenting this will not cause any problem, if it did please write another workaround
+        // if (!peopleSearchOpen) {
+            const rawData = convertToRaw(editorStateUpdated.getCurrentContent());
+            const mentionList = [];
+            Object.keys(rawData.entityMap).forEach((key) => {
+                if (rawData.entityMap[key].type === '#mention') {
+                    return;
+                }
+                mentionList.push({
+                    emailAddress: rawData.entityMap[key]?.data?.mention?.value,
+                    fullName: rawData.entityMap[key]?.data?.mention?.name,
+                });
             });
-        });
-        const value = rawData.blocks.map((block) => (!block.text.trim() && '\n') || block.text).join('\n');
-        const htmlText = convertToHTMLString(editorStateUpdated, this.props.isColorRequired);
-        onContentTextChange?.({
-            formattedText: value,
-            value: htmlText,
-            mentionList,
-            rawValue: getContentFromEditorState(editorStateUpdated),
-            backgroundColor: customFormat?.backgroundColor ?? format?.backgroundColor,
-            justifyContent: customFormat?.justifyContent ?? format?.justifyContent,
-        });
-        onContentChange?.(htmlText);
+            const value = rawData.blocks.map((block) => (!block.text.trim() && '\n') || block.text).join('\n');
+            const htmlText = convertToHTMLString(editorStateUpdated, this.props.isColorRequired);
+            this.setState({
+                editorState: editorStateUpdated,
+                format: formatState,
+            });
+            onContentTextChange?.({
+                formattedText: value,
+                value: htmlText,
+                mentionList,
+                rawValue: getContentFromEditorState(editorStateUpdated),
+                backgroundColor: customFormat?.backgroundColor ?? format?.backgroundColor,
+                justifyContent: customFormat?.justifyContent ?? format?.justifyContent,
+            });
+            onContentChange?.(htmlText);
+        // }
     };
 
     onEditorTextChange = (editorStateUpdated: EditorState) => {
@@ -297,13 +338,25 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
     onOpenChange = (searchKey: string) => (_open: boolean) => {
         this.setState({ [searchKey]: _open } as Partial<IDraftEditorState>);
     };
+
+    onCustomSuggestionsFilter = (searchValue: string, suggestions: any[]) => {
+        const size = (list) => (list.constructor.name === 'List' ? list.size : list.length);
+        const get = (obj, attr) => (obj.get ? obj.get(attr) : obj[attr]);
+        const value = searchValue.toLowerCase();
+        const filteredSuggestions = suggestions.filter(
+            (suggestion) => !value || get(suggestion, 'name').toLowerCase().indexOf(value) > -1,
+        );
+        const length = size(filteredSuggestions) < 15 ? size(filteredSuggestions) : 15;
+        return filteredSuggestions.slice(0, length);
+    };
+
     onSearchChange = ({ trigger, value }: { trigger: string; value: string }) => {
         const { onMentionInput, valueSuggestion } = this.props;
         if (trigger === MENTION_SUGGESTION_NAME.PREFIX_ONE) {
             onMentionInput?.(value);
         } else {
             this.setState({
-                suggestions: defaultSuggestionsFilter(value, valueSuggestion),
+                suggestions: this.onCustomSuggestionsFilter(value, valueSuggestion),
             });
         }
     };
