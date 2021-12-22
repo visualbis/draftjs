@@ -1,5 +1,6 @@
 import { default as Editor } from '@draft-js-plugins/editor';
 import createMentionPlugin from '@draft-js-plugins/mention';
+import createLinkifyPlugin from 'draft-js-link-detection-plugin';
 import '@draft-js-plugins/mention/lib/plugin.css';
 import {
     convertToRaw,
@@ -51,9 +52,12 @@ interface IDraftEditorProps {
     submit?: () => void;
     readOnly?: boolean;
     entitySelectionAsWhole?: boolean;
-    isColorRequired?: boolean;
+    isColorRequired?:boolean;
+    valueMentionTrigger?:() => void; 
     formatAllWhenNoneSelected?: boolean;
-    onFocus?:boolean;
+    shouldFocusOnMount?:boolean;
+    onFocus?:() => void;
+    onBlur?:() => void;
 }
 
 export interface IDraftEditorRef {
@@ -70,6 +74,8 @@ interface IDraftEditorState {
     peopleSearchOpen?: boolean;
     suggestions?: any[];
 }
+
+const linkifyPlugin = createLinkifyPlugin();
 
 class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
     private mentionSuggestionList: any;
@@ -147,12 +153,16 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
       };
 
     componentDidMount() {
-        const { onFocus } = this.props;
-        const { editorState } = this.state;
-        if(onFocus) {
-            const updatedEditorState = this.moveSelectionToEnd(editorState);
-            this.setState({ editorState: updatedEditorState})
-        }
+        setTimeout( () => {
+            const { shouldFocusOnMount, onFocus } = this.props;
+            const { editorState } = this.state;
+            if(shouldFocusOnMount) {
+                const updatedEditorState = this.moveSelectionToEnd(editorState);
+                this.setState({ editorState: updatedEditorState}, () => {
+                    onFocus && onFocus();
+                })
+            }
+        }, 0);
     }
 
     setFormat = (formatType: string, value: string) => {
@@ -318,7 +328,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         const { MentionSuggestions: ValueSuggestion } = mentionPlugin_PREFIX_TWO;
 
         // eslint-disable-next-line no-shadow
-        const plugins = [];
+        const plugins:any = [linkifyPlugin];
         if (showMention.people) {
             plugins.push(mentionPlugin_PREFIX_ONE);
         }
@@ -372,11 +382,15 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         if (KeyBindingUtil.hasCommandModifier(event) && event.keyCode === 13) {
             return 'submit';
         }
+        if (event.keyCode === 51) { // if # trigger selection
+            this.props.valueMentionTrigger && this.props.valueMentionTrigger();
+        }
+
         return getDefaultKeyBinding(event);
     };
     insertTextAtCursor = (textToInsert: string) => {
         const { editorState } = this.state;
-
+        const { onFocus } = this.props;
         const currentContent = editorState.getCurrentContent();
         const currentSelection = editorState.getSelection();
 
@@ -404,9 +418,14 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
 
         this.setState({
             editorState: newState,
-        });
+        }); 
+        setTimeout(() => { // after adding selected text, reset focus ref
+            onFocus && onFocus();
+        }, 200)
         return newState;
     };
+
+
     insertEntityAtCursor = (value: { [key: string]: string }, key: string) => {
         const { editorState } = this.state;
         const stateWithEntity = editorState.getCurrentContent().createEntity('mention', 'IMMUTABLE', {
@@ -417,12 +436,12 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         this.updateData(EditorState.push(editorState, stateWithText, 'insert-fragment'));
     };
     render() {
-        const { textAlignment, toolbarComponent, peopleSuggestion, isMentionLoading, placeholder, readOnly } =
+        const { textAlignment, toolbarComponent, peopleSuggestion, isMentionLoading, placeholder, readOnly, onBlur, onFocus } =
             this.props;
         const { editorState, peopleSearchOpen, valueSearchOpen, suggestions, format } = this.state;
         const MentionComp = this.mentionSuggestionList?.MentionSuggestions;
         const ValueMentionComp = this.mentionSuggestionList?.ValueSuggestion;
-
+        const keyBindingFn = !peopleSearchOpen ? this.keyBindingFn : undefined;
         return (
             <Fragment>
                 {toolbarComponent &&
@@ -440,8 +459,10 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
                     customStyleMap={CUSTOM_STYLE_MAP}
                     plugins={this.mentionSuggestionList?.plugins}
                     handleReturn={this.handleReturn}
-                    keyBindingFn={this.keyBindingFn}
+                    keyBindingFn={keyBindingFn}
                     readOnly={readOnly}
+                    onFocus={ onFocus}
+                    onBlur={onBlur}
                 />
                 <div className="list_container">
                     {peopleSearchOpen && !isMentionLoading && peopleSuggestion?.length === 0 && (
