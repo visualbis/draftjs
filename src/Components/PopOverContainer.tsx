@@ -9,17 +9,10 @@ const PopOverContainer = (props: any) => {
         if (!boundingRect) {
             return null;
         }
-        let container =  document.body.getElementsByClassName('mention-list-container')[0];
+        const container =  document.body.getElementsByClassName('mention-list-container')[0];
         if(!container) {
-           container = document.createElement('div');
-           container.className = 'mention-list-container'
-           document.body.appendChild(container);
+           return null
         }
-        useEffect(()=> {
-            return () => {
-                document.body.removeChild(container)
-            }
-        },[])
         const style: React.CSSProperties = boundingRect
             ? {
                   position: boundingRect ? 'fixed' : null,
@@ -37,13 +30,7 @@ const PopOverContainer = (props: any) => {
                 <div className="mention-list" style={style}>
                     {props.children}
                 </div>
-            ), container);  
-        // return (
-        //     <div className="mention-list" style={style}>
-        //         {props.children}
-        //     </div>
-        // );
-    
+            ), container);
 }
 
 export default PopOverContainer;
