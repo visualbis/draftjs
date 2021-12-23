@@ -153,6 +153,12 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
       };
 
     componentDidMount() {
+        let container =  document.body.getElementsByClassName('mention-list-container')[0];
+        if(!container) {
+            container = document.createElement('div');
+            container.className = 'mention-list-container'
+            document.body.appendChild(container);
+        }
         setTimeout( () => {
             const { shouldFocusOnMount, onFocus } = this.props;
             const { editorState } = this.state;
