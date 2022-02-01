@@ -141,16 +141,16 @@ const convertFromHTMLString = (html: string): Draft.ContentState => {
             } else if (nodeName === 'span' && node.classList.contains('hash-mention')) {
                 const data = JSON.parse(node.dataset.value);
                 return createEntity('#mention', 'IMMUTABLE', { mention: { name: data.name, ...data } });
-            } else if(nodeName === 'a') {
+            } else if (nodeName === 'a') {
                 const data = JSON.parse(node.dataset.value);
 
-                return createEntity('link', 'MUTABLE', {  ...data  });
+                return createEntity('link', 'MUTABLE', { ...data });
             }
         },
     })(html);
 };
 
-const convertToHTMLString = (editorState: EditorState, isColorRequired:boolean = false) => {
+const convertToHTMLString = (editorState: EditorState, isColorRequired: boolean = false) => {
     return convertToHTML({
         styleToHTML: (style) => {
             if (style === formatKeys.bold.toUpperCase()) {
@@ -198,14 +198,14 @@ const convertToHTMLString = (editorState: EditorState, isColorRequired:boolean =
                         {originalText}
                     </span>
                 );
-            } else if(entity.type === 'link' || entity.type === 'LINK') {
+            } else if (entity.type === 'link' || entity.type === 'LINK') {
                 return (
                     <a
                         target="_blank"
                         href={entity.data.url}
                         style={{ ...mentionAnchorStyle }}
                         data-value={JSON.stringify({
-                            ...entity.data,  
+                            ...entity.data,
                         })}
                         data-id="draft-link"
                     >
@@ -218,6 +218,9 @@ const convertToHTMLString = (editorState: EditorState, isColorRequired:boolean =
     })(editorState.getCurrentContent());
 };
 
+const extractContentFromHTML = (html: string) =>
+    new DOMParser()?.parseFromString(html, 'text/html')?.documentElement?.textContent;
+
 export {
     convertFromHTMLString,
     resolveCustomStyleMap,
@@ -225,4 +228,5 @@ export {
     getFormat,
     getContentFromEditorState,
     convertToHTMLString,
+    extractContentFromHTML,
 };
