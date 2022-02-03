@@ -328,17 +328,17 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         const { showMention } = this.props;
         const mentionPlugin_PREFIX_ONE = showMention.people
             ? createMentionPlugin({
-                  mentionTrigger: MENTION_SUGGESTION_NAME.PREFIX_ONE,
-                  supportWhitespace: false,
-                  entityMutability: 'IMMUTABLE',
-              })
+                mentionTrigger: MENTION_SUGGESTION_NAME.PREFIX_ONE,
+                supportWhitespace: false,
+                entityMutability: 'IMMUTABLE',
+            })
             : { MentionSuggestions: null };
         const mentionPlugin_PREFIX_TWO = showMention.value
             ? createMentionPlugin({
-                  mentionTrigger: MENTION_SUGGESTION_NAME.PREFIX_TWO,
-                  supportWhitespace: false,
-                  entityMutability: 'IMMUTABLE',
-              })
+                mentionTrigger: MENTION_SUGGESTION_NAME.PREFIX_TWO,
+                supportWhitespace: false,
+                entityMutability: 'IMMUTABLE',
+            })
             : { MentionSuggestions: null };
 
         // eslint-disable-next-line no-shadow
@@ -407,24 +407,26 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
 
         return getDefaultKeyBinding(event);
     };
-    insertTextAtCursor = (textToInsert: string) => {
+    insertTextAtCursor = (textToInsert: string, textColor?: string) => {
         const { editorState } = this.state;
         const { onFocus } = this.props;
         const currentContent = editorState.getCurrentContent();
         const currentSelection = editorState.getSelection();
-
+        const textInlineStyle = textColor ? `color__${textColor}` : null;
         let newContent = Modifier.replaceText(currentContent, currentSelection, textToInsert);
-
         const textToInsertSelection = currentSelection.set(
             'focusOffset',
             currentSelection.getFocusOffset() + textToInsert.length,
         ) as SelectionState;
 
         let inlineStyles = editorState.getCurrentInlineStyle();
-
-        inlineStyles.forEach(
-            (inLineStyle) => (newContent = Modifier.applyInlineStyle(newContent, textToInsertSelection, inLineStyle)),
-        );
+        if (textColor) {
+            newContent = Modifier.applyInlineStyle(newContent, textToInsertSelection, textInlineStyle);
+        } else {
+            inlineStyles.forEach(
+                (inLineStyle) => (newContent = Modifier.applyInlineStyle(newContent, textToInsertSelection, inLineStyle)),
+            );
+        }
 
         let newState = EditorState.push(editorState, newContent, 'insert-characters');
         newState = EditorState.forceSelection(
