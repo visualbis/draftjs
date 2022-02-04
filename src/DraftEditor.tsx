@@ -19,7 +19,6 @@ import SuggestionList from './Components/SuggestionList';
 import {
     convertFromHTMLString,
     convertToHTMLString,
-    extractContentFromHTML,
     formatText,
     getContentFromEditorState,
     getFormat,
@@ -110,7 +109,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
     };
 
     UNSAFE_componentWillReceiveProps(newProps) {
-        if (newProps.initialContent === '' || extractContentFromHTML(newProps.initialContent) === '') {
+        if (newProps.initialContent === '') {
             this.setState({ editorState: EditorState.createWithContent(convertFromHTMLString('')) });
         }
     }

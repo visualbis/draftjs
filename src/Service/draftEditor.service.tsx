@@ -218,9 +218,6 @@ const convertToHTMLString = (editorState: EditorState, isColorRequired: boolean 
     })(editorState.getCurrentContent());
 };
 
-const extractContentFromHTML = (html: string) =>
-    new DOMParser()?.parseFromString(html, 'text/html')?.documentElement?.textContent;
-
 export {
     convertFromHTMLString,
     resolveCustomStyleMap,
@@ -228,5 +225,4 @@ export {
     getFormat,
     getContentFromEditorState,
     convertToHTMLString,
-    extractContentFromHTML,
 };
