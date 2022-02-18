@@ -65,7 +65,7 @@ export interface IDraftEditorRef {
     setFormat: (formatType: string, value: string) => void;
     setContent: (content: string) => string;
     insertTextAtCursor: (text: string) => void;
-    insertEntityAtCursor: (value: { [key: string]: string }, key: string) => void;
+    insertEntityAtCursor: (value: { [key: string]: string }, key: string, type: string) => void;
 }
 
 interface IDraftEditorState {
@@ -444,11 +444,10 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         return newState;
     };
 
-    insertEntityAtCursor = (value: { [key: string]: string }, key: string) => {
+    insertEntityAtCursor = (value: { [key: string]: string }, key: string, type = 'mention') => {
         const { editorState } = this.state;
-        const stateWithEntity = editorState.getCurrentContent().createEntity('mention', 'IMMUTABLE', {
-            mention: value,
-        });
+        const data = type === 'mention' ? { mention: value } : { ...value };
+        const stateWithEntity = editorState.getCurrentContent().createEntity(type, 'IMMUTABLE', data);
         const entityKey = stateWithEntity.getLastCreatedEntityKey();
         const stateWithText = Modifier.insertText(stateWithEntity, editorState.getSelection(), key, null, entityKey);
         this.updateData(EditorState.push(editorState, stateWithText, 'insert-fragment'));
@@ -471,7 +470,11 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         return (
             <Fragment>
                 {toolbarComponent &&
-                    React.cloneElement(toolbarComponent, { currentFormat: format, setFormat: this.setFormat })}
+                    React.cloneElement(toolbarComponent, {
+                        currentFormat: format,
+                        setFormat: this.setFormat,
+                        insertEntityAtCursor: this.insertEntityAtCursor,
+                    })}
                 <Editor
                     ref={this.editorRef}
                     customStyleFn={resolveCustomStyleMap}
