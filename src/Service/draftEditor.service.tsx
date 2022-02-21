@@ -131,6 +131,9 @@ const convertFromHTMLString = (html: string): Draft.ContentState => {
                 if (node.tagName === 'SUP') {
                     currentStyle = currentStyle.add(formatKeys.superScript.toUpperCase());
                 }
+                if (node.tagName === 'STRIKE') {
+                    currentStyle = currentStyle.add(formatKeys.strikethrough.toUpperCase());
+                }
             }
             return currentStyle;
         },
@@ -161,6 +164,11 @@ const convertToHTMLString = (editorState: EditorState, isColorRequired: boolean 
                 return <sup />;
             } else if (style === formatKeys.subScript.toUpperCase()) {
                 return <sub />;
+            } else if (style === formatKeys.strikethrough.toUpperCase()) {
+                return {
+                    start: `<span style="text-decoration: line-through">`,
+                    end: `</span>`,
+                };
             } else if (style.includes('__')) {
                 const [type, height] = style.split('__');
                 return {
