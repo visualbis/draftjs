@@ -17,6 +17,7 @@ export const formatKeys = {
     subScript: 'subscript',
     superScript: 'superScript',
     justifyContent: 'justify-content',
+    strikethrough: 'strikethrough',
 };
 
 export const styleValues = [
@@ -55,6 +56,9 @@ export const CUSTOM_STYLE_MAP: DraftStyleMap = {
     SUBSCRIPT: {
         verticalAlign: 'sub',
         fontSize: 'smaller',
+    },
+    STRIKETHROUGH: {
+        textDecoration: 'line-through',
     },
 };
 
