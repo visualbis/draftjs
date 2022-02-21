@@ -131,7 +131,6 @@ const convertFromHTMLString = (html: string): Draft.ContentState => {
                 if (node.tagName === 'SUP') {
                     currentStyle = currentStyle.add(formatKeys.superScript.toUpperCase());
                 }
-                console.log('=============', node.tagName);
                 if (node.tagName === 'STRIKE') {
                     currentStyle = currentStyle.add(formatKeys.strikethrough.toUpperCase());
                 }
