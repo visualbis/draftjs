@@ -59,6 +59,7 @@ interface IDraftEditorProps {
     shouldFocusOnMount?: boolean;
     onFocus?: () => void;
     onBlur?: () => void;
+    onSelection?: (editorStateUpdated: EditorState) => void;
 }
 
 export interface IDraftEditorRef {
@@ -213,6 +214,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
 
     onEditorStateChange = (editorStateUpdated: EditorState) => {
         // const editorState = this.onEditorTextChange(editorStateUpdated);
+        this.props.onSelection?.(editorStateUpdated);
         this.updateData(editorStateUpdated);
     };
 
