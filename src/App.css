@@ -1,17 +1,17 @@
 *,
 *::before,
 *::after {
-  box-sizing: inherit;
+    box-sizing: inherit;
 }
 
 html {
-  box-sizing: border-box;
-  -webkit-tap-highlight-color: transparent;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
 }
 
 body {
-  margin: 0 auto;
-  padding: 0;
+    margin: 0 auto;
+    padding: 0;
 }
 p,
 ul,
@@ -27,6 +27,6 @@ blockquote,
 pre,
 form,
 table {
-  margin: 0;
-  font-weight: normal !important;
+    margin: 0;
+    font-weight: normal !important;
 }
