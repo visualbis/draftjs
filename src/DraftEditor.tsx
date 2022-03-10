@@ -60,6 +60,7 @@ interface IDraftEditorProps {
     onFocus?: () => void;
     onBlur?: () => void;
     onSelection?: (editorStateUpdated: EditorState) => void;
+    ValuePopOverProps?: (props) => JSX.Element;
 }
 
 export interface IDraftEditorRef {
@@ -363,8 +364,8 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         return this.mentionSuggestionList;
     };
 
-    onOpenChange = (searchKey: string) => (_open: boolean) => {
-        this.setState({ [searchKey]: _open } as Partial<IDraftEditorState>);
+    onOpenChange = (_open: boolean) => {
+        this.setState({ peopleSearchOpen: _open } as Partial<IDraftEditorState>);
     };
 
     onCustomSuggestionsFilter = (searchValue: string, suggestions: any[]) => {
@@ -401,21 +402,20 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         if (KeyBindingUtil.hasCommandModifier(event) && event.keyCode === 13) {
             return 'submit';
         }
-        if (event.keyCode === 51) {
-            // if # trigger selection
-            this.props.valueMentionTrigger && this.props.valueMentionTrigger();
-        }
 
         return getDefaultKeyBinding(event);
     };
-    insertTextAtCursor = (textToInsert: string) => {
+
+    insertTextAtCursor = (textToInsert: string, offset: number = 0) => {
         const { editorState } = this.state;
         const { onFocus } = this.props;
         const currentContent = editorState.getCurrentContent();
-        const currentSelection = editorState.getSelection();
-
+        const nextOffSet = editorState.getSelection().getFocusOffset();
+        const currentSelection = editorState.getSelection().merge({
+            focusOffset: nextOffSet,
+            anchorOffset: nextOffSet - offset,
+        });
         let newContent = Modifier.replaceText(currentContent, currentSelection, textToInsert);
-
         const textToInsertSelection = currentSelection.set(
             'focusOffset',
             currentSelection.getFocusOffset() + textToInsert.length,
@@ -456,6 +456,26 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         const stateWithText = Modifier.insertText(stateWithEntity, editorState.getSelection(), key, null, entityKey);
         this.updateData(EditorState.push(editorState, stateWithText, 'insert-fragment'));
     };
+
+    onOutsideClick = () => {
+        this.setState({ valueSearchOpen: false });
+    };
+
+    onOpenValueChange = (value) => {
+        const { ValuePopOverProps } = this.props;
+        if (ValuePopOverProps) {
+            if (value) {
+                this.setState({
+                    valueSearchOpen: value,
+                });
+            }
+            return;
+        }
+        this.setState({
+            valueSearchOpen: value,
+        });
+    };
+
     render() {
         const {
             textAlignment,
@@ -466,11 +486,14 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
             readOnly,
             onBlur,
             onFocus,
+            valueSuggestion,
+            ValuePopOverProps,
         } = this.props;
         const { editorState, peopleSearchOpen, valueSearchOpen, suggestions, format } = this.state;
         const MentionComp = this.mentionSuggestionList?.MentionSuggestions;
         const ValueMentionComp = this.mentionSuggestionList?.ValueSuggestion;
         const keyBindingFn = !peopleSearchOpen ? this.keyBindingFn : undefined;
+        const PopoverComponent = ValuePopOverProps ? ValuePopOverProps : PopOverContainer;
         return (
             <Fragment>
                 {toolbarComponent &&
@@ -507,7 +530,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
                 {MentionComp && (
                     <MentionComp
                         open={peopleSearchOpen}
-                        onOpenChange={this.onOpenChange('peopleSearchOpen')}
+                        onOpenChange={this.onOpenChange}
                         suggestions={peopleSuggestion || []}
                         onSearchChange={this.onSearchChange}
                         entryComponent={SuggestionList}
@@ -517,11 +540,11 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
                 {ValueMentionComp && (
                     <ValueMentionComp
                         open={valueSearchOpen}
-                        onOpenChange={this.onOpenChange('valueSearchOpen')}
+                        onOpenChange={this.onOpenValueChange}
                         suggestions={suggestions}
                         onSearchChange={this.onSearchChange}
                         entryComponent={SuggestionList}
-                        popoverContainer={PopOverContainer}
+                        popoverContainer={PopoverComponent}
                     />
                 )}
             </Fragment>
