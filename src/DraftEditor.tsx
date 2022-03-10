@@ -541,7 +541,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
                     <ValueMentionComp
                         open={valueSearchOpen}
                         onOpenChange={this.onOpenValueChange}
-                        suggestions={valueSuggestion}
+                        suggestions={suggestions}
                         onSearchChange={this.onSearchChange}
                         entryComponent={SuggestionList}
                         popoverContainer={PopoverComponent}
