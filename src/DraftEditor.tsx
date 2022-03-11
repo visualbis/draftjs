@@ -399,8 +399,18 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
     };
 
     keyBindingFn = (event) => {
+        const { ValuePopOverProps } = this.props;
         if (KeyBindingUtil.hasCommandModifier(event) && event.keyCode === 13) {
             return 'submit';
+        }
+        if (ValuePopOverProps && event.keyCode === 27) {
+            this.setState({ valueSearchOpen: false });
+        }
+        if (ValuePopOverProps && event.keyCode === 51) {
+            // blur editor when # is used for value mention
+            setTimeout(() => {
+                this.editorRef.current.blur();
+            }, 1000);
         }
 
         return getDefaultKeyBinding(event);
