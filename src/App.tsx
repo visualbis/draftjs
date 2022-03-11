@@ -1,8 +1,6 @@
 import { useRef, useState } from 'react';
 import React from 'react';
 import DraftEditor from './DraftEditor';
-import SuggestionList from './Components/SuggestionList';
-import ValuePopOverContainer from './Components/ValuePopOverContainer';
 
 export const App = () => {
     const draftRef = useRef(null);
@@ -47,10 +45,10 @@ export const App = () => {
                         setContent(val);
                     }}
                     valueSuggestion={suggestionList}
-                    ValuePopOverProps={ValuePopOverContainer({
-                        onOutsideClick: draftRef.current?.onOutsideClick,
-                        insertDataAtCursor: (value) => draftRef.current.insertDataAtCursor(value, 1), // offset fro #
-                    })}
+                    // ValuePopOverProps={ValuePopOverContainer({
+                    //     onOutsideClick: draftRef.current?.onOutsideClick,
+                    //     insertDataAtCursor: (value) => draftRef.current.insertDataAtCursor(value, 1), // offset fro #
+                    // })}
                     showMention={{ value: true, people: false }}
                 />
             </div>
