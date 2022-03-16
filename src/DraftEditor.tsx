@@ -416,9 +416,10 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         return getDefaultKeyBinding(event);
     };
 
-    insertTextAtCursor = (textToInsert: string, offset: number = 0) => {
+    insertTextAtCursor = (textToInsert: string, offset: number = 0, textColor?: string) => {
         const { editorState } = this.state;
         const { onFocus } = this.props;
+        const textInlineStyle = textColor ? `color__${textColor}` : '';
         const currentContent = editorState.getCurrentContent();
         const nextOffSet = editorState.getSelection().getFocusOffset();
         const currentSelection = editorState.getSelection().merge({
@@ -432,12 +433,25 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         ) as SelectionState;
 
         let inlineStyles = editorState.getCurrentInlineStyle();
-
-        inlineStyles.forEach(
-            (inLineStyle) => (newContent = Modifier.applyInlineStyle(newContent, textToInsertSelection, inLineStyle)),
-        );
+        if (!textColor) {
+            inlineStyles.forEach(
+                (inLineStyle) =>
+                    (newContent = Modifier.applyInlineStyle(newContent, textToInsertSelection, inLineStyle)),
+            );
+        }
 
         let newState = EditorState.push(editorState, newContent, 'insert-characters');
+        if (textColor) {
+            newState = EditorState.forceSelection(
+                //  force seletion entered text
+                newState,
+                textToInsertSelection.set(
+                    'focusOffset',
+                    textToInsertSelection.getAnchorOffset() + textToInsert.length,
+                ) as SelectionState,
+            );
+            newState = formatText(newState, formatKeys.color, `${formatKeys.color}__${textColor}`); //format selection state
+        }
         newState = EditorState.forceSelection(
             newState,
             textToInsertSelection.set(
@@ -449,6 +463,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         this.setState({
             editorState: newState,
         });
+
         setTimeout(() => {
             // after adding selected text, reset focus ref
             onFocus && onFocus();
