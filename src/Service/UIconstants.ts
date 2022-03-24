@@ -18,7 +18,7 @@ export const formatKeys = {
     superScript: 'superScript',
     justifyContent: 'justify-content',
     strikethrough: 'strikethrough',
-    textAlign: 'textAlign',
+    textAlign: 'text-align',
 };
 
 export const styleValues = [
