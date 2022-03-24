@@ -205,6 +205,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
                 formatKeys.background,
                 formatKeys.lineHeight,
                 formatKeys.justifyContent,
+                formatKeys.textAlign,
             ].includes(formatType)
         ) {
             nextEditorState = formatText(nextEditorState, formatType, `${formatType}__${value}`);

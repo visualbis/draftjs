@@ -125,6 +125,9 @@ const convertFromHTMLString = (html: string): Draft.ContentState => {
                 if (node.style.justifyContent) {
                     currentStyle = currentStyle.add(`${formatKeys.justifyContent}__${node.style.justifyContent}`);
                 }
+                if (node.style.textAlign) {
+                    currentStyle = currentStyle.add(`${formatKeys.textAlign}__${node.style.textAlign}`);
+                }
                 if (node.tagName === 'SUB') {
                     currentStyle = currentStyle.add(formatKeys.subScript.toUpperCase());
                 }

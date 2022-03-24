@@ -18,6 +18,7 @@ export const formatKeys = {
     superScript: 'superScript',
     justifyContent: 'justify-content',
     strikethrough: 'strikethrough',
+    textAlign: 'textAlign',
 };
 
 export const styleValues = [
@@ -45,6 +46,10 @@ export const styleValues = [
     {
         key: `${formatKeys.justifyContent}__`,
         value: 'justifyContent',
+    },
+    {
+        key: `${formatKeys.textAlign}__`,
+        value: 'textAlign',
     },
 ];
 
