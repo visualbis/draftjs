@@ -61,6 +61,23 @@ interface IDraftEditorProps {
     onBlur?: () => void;
     onSelection?: (editorStateUpdated: EditorState) => void;
     ValuePopOverProps?: (props) => JSX.Element;
+    updateFormat?: (format: IElementFormats) => void;
+}
+export interface IElementFormats {
+    fontFamily?: string;
+    bold?: boolean;
+    italic?: boolean;
+    underline?: boolean;
+    fontSize?: string;
+    color?: string;
+    background?: string;
+    textAlign?: string;
+    superScript?: boolean;
+    subScript?: boolean;
+    enableBorder?: boolean;
+    borderColor?: string;
+    backgroundColor?: string;
+    justifyContent?: string;
 }
 
 export interface IDraftEditorRef {
@@ -72,7 +89,7 @@ export interface IDraftEditorRef {
 
 interface IDraftEditorState {
     editorState?: EditorState;
-    format?: any;
+    format?: IElementFormats;
     valueSearchOpen?: boolean;
     peopleSearchOpen?: boolean;
     suggestions?: any[];
@@ -98,6 +115,12 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         if (showMention && (showMention.people || showMention.value)) {
             this.MentionComponents();
         }
+    }
+
+    getCurrentFormat() {
+        const { editorState } = this.state;
+        const format = getFormat(editorState);
+        return format;
     }
 
     handlePastedText = (text: string, html: string, editorState: EditorState) => {
@@ -205,10 +228,11 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
                 formatKeys.background,
                 formatKeys.lineHeight,
                 formatKeys.justifyContent,
-                formatKeys.textAlign,
             ].includes(formatType)
         ) {
             nextEditorState = formatText(nextEditorState, formatType, `${formatType}__${value}`);
+        } else if (formatType === formatKeys.textAlign) {
+            nextEditorState = RichUtils.toggleBlockType(editorState, value);
         } else nextEditorState = RichUtils.toggleInlineStyle(nextEditorState, formatType.toUpperCase());
         const format = getFormat(nextEditorState);
         this.updateData(nextEditorState, format);
@@ -247,7 +271,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
                 },
             );
         }
-        const { onContentTextChange, onContentChange } = this.props;
+        const { onContentTextChange, onContentChange, updateFormat } = this.props;
         const { peopleSearchOpen, format } = this.state;
         const formatState = this.sendFormat(editorStateUpdated);
         // Commenting this condition since it is not allowing the mentions data to be passed to the parent comp.
@@ -279,6 +303,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
             justifyContent: customFormat?.justifyContent ?? format?.justifyContent,
         });
         onContentChange?.(htmlText);
+        updateFormat?.(customFormat ?? formatState);
         // }
     };
 
@@ -502,6 +527,27 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         });
     };
 
+    applyAlignment = (newStyle) => {
+        const { editorState } = this.state;
+        const nextEditorState = RichUtils.toggleBlockType(editorState, newStyle);
+        return nextEditorState;
+    };
+
+    blockStyleFn(block) {
+        switch (block.getType()) {
+            case 'blockquote':
+                return 'RichEditor-blockquote';
+            case 'left':
+                return 'align-left';
+            case 'center':
+                return 'align-center';
+            case 'right':
+                return 'align-right';
+            default:
+                return null;
+        }
+    }
+
     render() {
         const {
             textAlignment,
@@ -547,6 +593,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
                     onCopy={onDraftEditorCopy}
                     onCut={onDraftEditorCut}
                     handlePastedText={this.handlePastedText}
+                    blockStyleFn={this.blockStyleFn}
                 />
                 <div className="list_container">
                     {peopleSearchOpen && !isMentionLoading && peopleSuggestion?.length === 0 && (
