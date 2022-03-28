@@ -12,7 +12,7 @@ export interface IDraftElementFormats {
     size?: string;
     color?: string;
     background?: string;
-    align?: string;
+    textAlign?: string;
     superScript?: boolean;
     subScript?: boolean;
     enableBorder?: boolean;
@@ -39,12 +39,15 @@ const resolveCustomStyleMap = (style: DraftInlineStyle) => {
 
 const getFormat = (editorStateData: EditorState) => {
     const style = editorStateData.getCurrentInlineStyle();
+    const selection = editorStateData.getSelection();
+    const blockType = editorStateData.getCurrentContent().getBlockForKey(selection.getStartKey()).getType();
     const format: IDraftElementFormats = {
         bold: style.has(formatKeys.bold.toUpperCase()),
         italic: style.has(formatKeys.italic.toUpperCase()),
         underline: style.has(formatKeys.underline.toUpperCase()),
         subScript: style.has(formatKeys.subScript.toUpperCase()),
         superScript: style.has(formatKeys.superScript.toUpperCase()),
+        textAlign: blockType,
     };
     style.forEach((styleKey) => {
         if (styleKey) {
@@ -125,9 +128,6 @@ const convertFromHTMLString = (html: string): Draft.ContentState => {
                 if (node.style.justifyContent) {
                     currentStyle = currentStyle.add(`${formatKeys.justifyContent}__${node.style.justifyContent}`);
                 }
-                if (node.style.textAlign) {
-                    currentStyle = currentStyle.add(`${formatKeys.textAlign}__${node.style.textAlign}`);
-                }
                 if (node.tagName === 'SUB') {
                     currentStyle = currentStyle.add(formatKeys.subScript.toUpperCase());
                 }
@@ -178,6 +178,15 @@ const convertToHTMLString = (editorState: EditorState, isColorRequired: boolean 
                     start: `<span style="${type}: ${height}">`,
                     end: `</span>`,
                 };
+            }
+        },
+        blockToHTML: (block) => {
+            if (block.type === 'center') {
+                return <p style={{ display: 'flex', justifyContent: 'center' }} />;
+            } else if (block.type === 'left') {
+                return <p style={{ display: 'flex', justifyContent: 'flex-start' }} />;
+            } else if (block.type === 'right') {
+                return <p style={{ display: 'flex', justifyContent: 'flex-end' }} />;
             }
         },
         entityToHTML: (entity, originalText) => {
