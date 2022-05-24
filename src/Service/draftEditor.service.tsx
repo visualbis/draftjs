@@ -125,9 +125,9 @@ const convertFromHTMLString = (html: string): Draft.ContentState => {
                 if (node.style.lineHeight) {
                     currentStyle = currentStyle.add(`${formatKeys.lineHeight}__${node.style.lineHeight}`);
                 }
-                if (node.style.justifyContent) {
-                    currentStyle = currentStyle.add(`${formatKeys.justifyContent}__${node.style.justifyContent}`);
-                }
+                // if (node.style.justifyContent) {
+                //     currentStyle = currentStyle.add(`${formatKeys.justifyContent}__${node.style.justifyContent}`);
+                // }
                 if (node.tagName === 'SUB') {
                     currentStyle = currentStyle.add(formatKeys.subScript.toUpperCase());
                 }
@@ -173,9 +173,10 @@ const convertToHTMLString = (editorState: EditorState, isColorRequired: boolean 
                     end: `</span>`,
                 };
             } else if (style.includes('__')) {
-                const [type, height] = style.split('__');
+                const [type, value] = style.split('__');
+                // replacing double quotes as font family is not detcted
                 return {
-                    start: `<span style="${type}: ${height}">`,
+                    start: `<span style="${type}: ${value.replace(/"/g, '')}">`,
                     end: `</span>`,
                 };
             }
