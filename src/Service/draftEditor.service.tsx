@@ -161,6 +161,8 @@ const convertToHTMLString = (editorState: EditorState, isColorRequired: boolean 
         styleToHTML: (style) => {
             if (style === formatKeys.bold.toUpperCase()) {
                 return <b />;
+            } else if (style === formatKeys.underline.toUpperCase()) {
+                return <u />;
             } else if (style === formatKeys.italic.toUpperCase()) {
                 return <em />;
             } else if (style === formatKeys.superScript.toUpperCase()) {
