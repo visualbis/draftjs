@@ -289,7 +289,11 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
             });
         });
         const value = rawData.blocks.map((block) => (!block.text.trim() && '\n') || block.text).join('\n');
-        const htmlText = convertToHTMLString(editorStateUpdated, this.props.isColorRequired);
+        const htmlText = convertToHTMLString(
+            editorStateUpdated,
+            this.props.isColorRequired,
+            !!this.props.ValuePopOverProps,
+        );
         this.setState({
             editorState: editorStateUpdated,
             format: formatState,
@@ -308,7 +312,11 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
     };
 
     onEditorTextChange = (editorStateUpdated: EditorState) => {
-        const html = convertToHTMLString(editorStateUpdated, this.props.isColorRequired);
+        const html = convertToHTMLString(
+            editorStateUpdated,
+            this.props.isColorRequired,
+            !!this.props.ValuePopOverProps,
+        );
         const editorState = EditorState.createWithContent(convertFromHTMLString(html));
 
         this.setState({
@@ -502,10 +510,10 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         return newState;
     };
 
-    insertEntityAtCursor = (value: { [key: string]: string }, key: string) => {
+    insertEntityAtCursor = (value: { [key: string]: string }, key: string, mentionType = 'mention') => {
         const { editorState } = this.state;
 
-        const stateWithEntity = editorState.getCurrentContent().createEntity('mention', 'IMMUTABLE', {
+        const stateWithEntity = editorState.getCurrentContent().createEntity(mentionType, 'IMMUTABLE', {
             mention: value,
         });
         const entityKey = stateWithEntity.getLastCreatedEntityKey();

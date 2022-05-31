@@ -156,7 +156,11 @@ const convertFromHTMLString = (html: string): Draft.ContentState => {
     })(html);
 };
 
-const convertToHTMLString = (editorState: EditorState, isColorRequired: boolean = false) => {
+const convertToHTMLString = (
+    editorState: EditorState,
+    isColorRequired: boolean = false,
+    dynamicMention: boolean = false,
+) => {
     return convertToHTML({
         styleToHTML: (style) => {
             if (style === formatKeys.bold.toUpperCase()) {
@@ -211,14 +215,15 @@ const convertToHTMLString = (editorState: EditorState, isColorRequired: boolean 
                 return (
                     <span
                         className="hash-mention"
-                        style={{ ...mentionAnchorStyle }}
+                        title={entity.data.mention.key}
+                        style={{ ...mentionAnchorStyle, color: entity.data.mention.color, backgroundColor: '#fff' }}
                         data-value={JSON.stringify({
                             ...entity.data.mention,
                             image: '',
                             avatar: '',
                         })}
                     >
-                        {originalText}
+                        {dynamicMention ? `#[${entity.data.mention.key}]` : originalText}
                     </span>
                 );
             } else if (entity.type === 'link' || entity.type === 'LINK') {
