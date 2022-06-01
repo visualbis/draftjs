@@ -213,7 +213,11 @@ const convertToHTMLString = (
                     <span
                         className="hash-mention"
                         title={entity.data.mention.key}
-                        style={{ ...mentionAnchorStyle, color: entity.data.mention.color, backgroundColor: '#fff' }}
+                        style={{
+                            ...mentionAnchorStyle,
+                            color: entity.data.mention.color,
+                            backgroundColor: 'transparent',
+                        }}
                         data-value={JSON.stringify({
                             ...entity.data.mention,
                             image: '',
