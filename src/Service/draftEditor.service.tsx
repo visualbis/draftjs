@@ -95,7 +95,28 @@ const formatText = (editorState: EditorState, formatType: string, value: string)
     if (!currentStyle.has(value)) {
         nextEditorState = RichUtils.toggleInlineStyle(nextEditorState, value);
     }
-    return nextEditorState;
+    return moveColorToTop(nextEditorState);
+};
+
+const moveColorToTop = (editorState: EditorState) => {
+    const selection = editorState.getSelection();
+    const currentStyleBefore = editorState.getCurrentInlineStyle();
+    let contentState = editorState.getCurrentContent();
+
+    const colorStyle = currentStyleBefore.find((item) => item && item.includes(`${formatKeys.color}__`));
+    if (currentStyleBefore.first() !== colorStyle) {
+        currentStyleBefore.forEach((item) => {
+            contentState = Modifier.removeInlineStyle(contentState, selection, item);
+        });
+        if (colorStyle) contentState = Modifier.applyInlineStyle(contentState, selection, colorStyle);
+        currentStyleBefore.forEach((item) => {
+            if (item && item !== colorStyle) {
+                contentState = Modifier.applyInlineStyle(contentState, selection, item);
+            }
+        });
+        return EditorState.push(editorState, contentState, 'change-inline-style');
+    }
+    return editorState;
 };
 
 const getContentFromEditorState = (editorStateUpdated: EditorState) => {
