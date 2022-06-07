@@ -525,6 +525,12 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         this.setState({ valueSearchOpen: false });
     };
 
+    getEditorContainerRect = () => {
+        if (this.editorRef.current) {
+            return this.editorRef.current.getEditorRef().editor.getBoundingClientRect();
+        }
+    };
+
     onOpenValueChange = (value) => {
         const { ValuePopOverProps } = this.props;
         if (ValuePopOverProps) {

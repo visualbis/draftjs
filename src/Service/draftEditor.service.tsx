@@ -212,7 +212,7 @@ const convertToHTMLString = (
                 return (
                     <span
                         className="hash-mention"
-                        title={entity.data.mention.key}
+                        title={dynamicMention ? entity.data.mention.title : null}
                         style={{
                             ...mentionAnchorStyle,
                             color: entity.data.mention.color,
