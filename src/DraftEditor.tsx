@@ -296,7 +296,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         );
         this.setState({
             editorState: editorStateUpdated,
-            format: formatState,
+            format: customFormat ?? formatState,
         });
         onContentTextChange?.({
             formattedText: value,
