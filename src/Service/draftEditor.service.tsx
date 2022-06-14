@@ -19,6 +19,7 @@ export interface IDraftElementFormats {
     borderColor?: string;
     backgroundColor?: string;
     justifyContent?: string;
+    strikeThrough?: boolean;
 }
 
 const resolveCustomStyleMap = (style: DraftInlineStyle) => {
@@ -48,6 +49,7 @@ const getFormat = (editorStateData: EditorState) => {
         subScript: style.has(formatKeys.subScript.toUpperCase()),
         superScript: style.has(formatKeys.superScript.toUpperCase()),
         textAlign: blockType,
+        strikeThrough: style.has(formatKeys.strikethrough.toUpperCase()),
     };
     style.forEach((styleKey) => {
         if (styleKey) {
