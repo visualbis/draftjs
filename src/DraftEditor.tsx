@@ -5,6 +5,7 @@ import createLinkifyPlugin from 'draft-js-link-detection-plugin';
 import '@draft-js-plugins/mention/lib/plugin.css';
 import {
     convertToRaw,
+    DraftDecorator,
     EditorState,
     getDefaultKeyBinding,
     KeyBindingUtil,
@@ -62,6 +63,7 @@ interface IDraftEditorProps {
     onSelection?: (editorStateUpdated: EditorState) => void;
     ValuePopOverProps?: (props) => JSX.Element;
     updateFormat?: (format: IElementFormats) => void;
+    decorators?: DraftDecorator[];
 }
 export interface IElementFormats {
     fontFamily?: string;
@@ -239,7 +241,6 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
     };
 
     onEditorStateChange = (editorStateUpdated: EditorState) => {
-        // const editorState = this.onEditorTextChange(editorStateUpdated);
         this.props.onSelection?.(editorStateUpdated);
         this.updateData(editorStateUpdated);
     };
@@ -311,20 +312,6 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         // }
     };
 
-    onEditorTextChange = (editorStateUpdated: EditorState) => {
-        const html = convertToHTMLString(
-            editorStateUpdated,
-            this.props.isColorRequired,
-            !!this.props.ValuePopOverProps,
-        );
-        const editorState = EditorState.createWithContent(convertFromHTMLString(html));
-
-        this.setState({
-            editorState: editorState,
-        });
-        return editorState;
-    };
-
     handleKeyCommand = (command: string, editorStateUpdated: EditorState) => {
         if (command === 'submit' && this.props.submit) {
             this.props.submit();
@@ -361,7 +348,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
     };
 
     MentionComponents = () => {
-        const { showMention } = this.props;
+        const { showMention, decorators } = this.props;
         const mentionPlugin_PREFIX_ONE = showMention.people
             ? createMentionPlugin({
                   mentionTrigger: MENTION_SUGGESTION_NAME.PREFIX_ONE,
@@ -383,6 +370,10 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
 
         // eslint-disable-next-line no-shadow
         const plugins: any = [linkifyPlugin];
+
+        if (decorators) {
+            plugins.push({ decorators });
+        }
         if (showMention.people) {
             plugins.push(mentionPlugin_PREFIX_ONE);
         }
