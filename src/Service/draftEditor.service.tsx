@@ -214,10 +214,10 @@ const convertToHTMLString = (
                 return (
                     <span
                         className="hash-mention"
-                        title={dynamicMention ? entity.data.mention.title : null}
+                        title={dynamicMention ? entity.data.mention?.title : null}
                         style={{
                             ...mentionAnchorStyle,
-                            color: entity.data.mention.color,
+                            color: entity.data.mention?.color,
                             backgroundColor: 'transparent',
                         }}
                         data-value={JSON.stringify({
@@ -226,7 +226,7 @@ const convertToHTMLString = (
                             avatar: '',
                         })}
                     >
-                        {dynamicMention ? `#[${entity.data.mention.key}]` : originalText}
+                        {dynamicMention ? `#[${entity.data.mention?.key}]` : originalText}
                     </span>
                 );
             } else if (entity.type === 'link' || entity.type === 'LINK') {
