@@ -102,6 +102,7 @@ const linkifyPlugin = createLinkifyPlugin();
 class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
     private mentionSuggestionList: any;
     public editorRef: React.RefObject<Editor>;
+    private plugins: any;
     constructor(props: IDraftEditorProps) {
         super(props);
         const { initialContent, showMention } = props;
@@ -114,6 +115,10 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
             peopleSearchOpen: false,
             suggestions: props.valueSuggestion,
         };
+        this.plugins = [linkifyPlugin];
+        if (props.decorators) {
+            this.plugins.push({ decorators: props.decorators });
+        }
         if (showMention && (showMention.people || showMention.value)) {
             this.MentionComponents();
         }
@@ -368,21 +373,14 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         const { MentionSuggestions } = mentionPlugin_PREFIX_ONE;
         const { MentionSuggestions: ValueSuggestion } = mentionPlugin_PREFIX_TWO;
 
-        // eslint-disable-next-line no-shadow
-        const plugins: any = [linkifyPlugin];
-
-        if (decorators) {
-            plugins.push({ decorators });
-        }
         if (showMention.people) {
-            plugins.push(mentionPlugin_PREFIX_ONE);
+            this.plugins.push(mentionPlugin_PREFIX_ONE);
         }
         if (showMention.value) {
-            plugins.push(mentionPlugin_PREFIX_TWO);
+            this.plugins.push(mentionPlugin_PREFIX_TWO);
         }
 
         this.mentionSuggestionList = {
-            plugins,
             MentionSuggestions,
             ValueSuggestion,
         };
@@ -594,7 +592,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
                     textAlignment={textAlignment as any}
                     handleKeyCommand={this.handleKeyCommand}
                     customStyleMap={CUSTOM_STYLE_MAP}
-                    plugins={this.mentionSuggestionList?.plugins}
+                    plugins={this.plugins}
                     handleReturn={this.handleReturn}
                     keyBindingFn={keyBindingFn}
                     readOnly={readOnly}
