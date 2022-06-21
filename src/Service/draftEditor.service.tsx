@@ -19,6 +19,7 @@ export interface IDraftElementFormats {
     borderColor?: string;
     backgroundColor?: string;
     justifyContent?: string;
+    strikeThrough?: boolean;
 }
 
 const resolveCustomStyleMap = (style: DraftInlineStyle) => {
@@ -48,6 +49,7 @@ const getFormat = (editorStateData: EditorState) => {
         subScript: style.has(formatKeys.subScript.toUpperCase()),
         superScript: style.has(formatKeys.superScript.toUpperCase()),
         textAlign: blockType,
+        strikeThrough: style.has(formatKeys.strikethrough.toUpperCase()),
     };
     style.forEach((styleKey) => {
         if (styleKey) {
@@ -95,7 +97,28 @@ const formatText = (editorState: EditorState, formatType: string, value: string)
     if (!currentStyle.has(value)) {
         nextEditorState = RichUtils.toggleInlineStyle(nextEditorState, value);
     }
-    return nextEditorState;
+    return moveColorToTop(nextEditorState);
+};
+
+const moveColorToTop = (editorState: EditorState) => {
+    const selection = editorState.getSelection();
+    const currentStyleBefore = editorState.getCurrentInlineStyle();
+    let contentState = editorState.getCurrentContent();
+
+    const colorStyle = currentStyleBefore.find((item) => item && item.includes(`${formatKeys.color}__`));
+    if (currentStyleBefore.first() !== colorStyle) {
+        currentStyleBefore.forEach((item) => {
+            contentState = Modifier.removeInlineStyle(contentState, selection, item);
+        });
+        if (colorStyle) contentState = Modifier.applyInlineStyle(contentState, selection, colorStyle);
+        currentStyleBefore.forEach((item) => {
+            if (item && item !== colorStyle) {
+                contentState = Modifier.applyInlineStyle(contentState, selection, item);
+            }
+        });
+        return EditorState.push(editorState, contentState, 'change-inline-style');
+    }
+    return editorState;
 };
 
 const getContentFromEditorState = (editorStateUpdated: EditorState) => {
@@ -125,9 +148,9 @@ const convertFromHTMLString = (html: string): Draft.ContentState => {
                 if (node.style.lineHeight) {
                     currentStyle = currentStyle.add(`${formatKeys.lineHeight}__${node.style.lineHeight}`);
                 }
-                if (node.style.justifyContent) {
-                    currentStyle = currentStyle.add(`${formatKeys.justifyContent}__${node.style.justifyContent}`);
-                }
+                // if (node.style.justifyContent) {
+                //     currentStyle = currentStyle.add(`${formatKeys.justifyContent}__${node.style.justifyContent}`);
+                // }
                 if (node.tagName === 'SUB') {
                     currentStyle = currentStyle.add(formatKeys.subScript.toUpperCase());
                 }
@@ -156,11 +179,17 @@ const convertFromHTMLString = (html: string): Draft.ContentState => {
     })(html);
 };
 
-const convertToHTMLString = (editorState: EditorState, isColorRequired: boolean = false) => {
+const convertToHTMLString = (
+    editorState: EditorState,
+    isColorRequired: boolean = false,
+    dynamicMention: boolean = false,
+) => {
     return convertToHTML({
         styleToHTML: (style) => {
             if (style === formatKeys.bold.toUpperCase()) {
                 return <b />;
+            } else if (style === formatKeys.underline.toUpperCase()) {
+                return <u />;
             } else if (style === formatKeys.italic.toUpperCase()) {
                 return <em />;
             } else if (style === formatKeys.superScript.toUpperCase()) {
@@ -173,9 +202,10 @@ const convertToHTMLString = (editorState: EditorState, isColorRequired: boolean 
                     end: `</span>`,
                 };
             } else if (style.includes('__')) {
-                const [type, height] = style.split('__');
+                const [type, value] = style.split('__');
+                // replacing double quotes as font family is not detcted
                 return {
-                    start: `<span style="${type}: ${height}">`,
+                    start: `<span style="${type}: ${value.replace(/"/g, '')}">`,
                     end: `</span>`,
                 };
             }
@@ -208,14 +238,17 @@ const convertToHTMLString = (editorState: EditorState, isColorRequired: boolean 
                 return (
                     <span
                         className="hash-mention"
-                        style={{ ...mentionAnchorStyle }}
+                        title={dynamicMention ? entity.data.mention?.title : null}
+                        style={{
+                            ...mentionAnchorStyle,
+                        }}
                         data-value={JSON.stringify({
                             ...entity.data.mention,
                             image: '',
                             avatar: '',
                         })}
                     >
-                        {originalText}
+                        {dynamicMention ? `#[${entity.data.mention?.key}]` : originalText}
                     </span>
                 );
             } else if (entity.type === 'link' || entity.type === 'LINK') {

@@ -5,6 +5,7 @@ import createLinkifyPlugin from 'draft-js-link-detection-plugin';
 import '@draft-js-plugins/mention/lib/plugin.css';
 import {
     convertToRaw,
+    DraftDecorator,
     EditorState,
     getDefaultKeyBinding,
     KeyBindingUtil,
@@ -62,6 +63,7 @@ interface IDraftEditorProps {
     onSelection?: (editorStateUpdated: EditorState) => void;
     ValuePopOverProps?: (props) => JSX.Element;
     updateFormat?: (format: IElementFormats) => void;
+    decorators?: DraftDecorator[];
 }
 export interface IElementFormats {
     fontFamily?: string;
@@ -100,6 +102,7 @@ const linkifyPlugin = createLinkifyPlugin();
 class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
     private mentionSuggestionList: any;
     public editorRef: React.RefObject<Editor>;
+    private plugins: any;
     constructor(props: IDraftEditorProps) {
         super(props);
         const { initialContent, showMention } = props;
@@ -112,6 +115,10 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
             peopleSearchOpen: false,
             suggestions: props.valueSuggestion,
         };
+        this.plugins = [linkifyPlugin];
+        if (props.decorators) {
+            this.plugins.push({ decorators: props.decorators });
+        }
         if (showMention && (showMention.people || showMention.value)) {
             this.MentionComponents();
         }
@@ -239,7 +246,6 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
     };
 
     onEditorStateChange = (editorStateUpdated: EditorState) => {
-        // const editorState = this.onEditorTextChange(editorStateUpdated);
         this.props.onSelection?.(editorStateUpdated);
         this.updateData(editorStateUpdated);
     };
@@ -289,10 +295,14 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
             });
         });
         const value = rawData.blocks.map((block) => (!block.text.trim() && '\n') || block.text).join('\n');
-        const htmlText = convertToHTMLString(editorStateUpdated, this.props.isColorRequired);
+        const htmlText = convertToHTMLString(
+            editorStateUpdated,
+            this.props.isColorRequired,
+            !!this.props.ValuePopOverProps,
+        );
         this.setState({
             editorState: editorStateUpdated,
-            format: formatState,
+            format: customFormat ?? formatState,
         });
         onContentTextChange?.({
             formattedText: value,
@@ -305,16 +315,6 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         onContentChange?.(htmlText);
         updateFormat?.(customFormat ?? formatState);
         // }
-    };
-
-    onEditorTextChange = (editorStateUpdated: EditorState) => {
-        const html = convertToHTMLString(editorStateUpdated, this.props.isColorRequired);
-        const editorState = EditorState.createWithContent(convertFromHTMLString(html));
-
-        this.setState({
-            editorState: editorState,
-        });
-        return editorState;
     };
 
     handleKeyCommand = (command: string, editorStateUpdated: EditorState) => {
@@ -353,7 +353,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
     };
 
     MentionComponents = () => {
-        const { showMention } = this.props;
+        const { showMention, decorators } = this.props;
         const mentionPlugin_PREFIX_ONE = showMention.people
             ? createMentionPlugin({
                   mentionTrigger: MENTION_SUGGESTION_NAME.PREFIX_ONE,
@@ -373,17 +373,14 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         const { MentionSuggestions } = mentionPlugin_PREFIX_ONE;
         const { MentionSuggestions: ValueSuggestion } = mentionPlugin_PREFIX_TWO;
 
-        // eslint-disable-next-line no-shadow
-        const plugins: any = [linkifyPlugin];
         if (showMention.people) {
-            plugins.push(mentionPlugin_PREFIX_ONE);
+            this.plugins.push(mentionPlugin_PREFIX_ONE);
         }
         if (showMention.value) {
-            plugins.push(mentionPlugin_PREFIX_TWO);
+            this.plugins.push(mentionPlugin_PREFIX_TWO);
         }
 
         this.mentionSuggestionList = {
-            plugins,
             MentionSuggestions,
             ValueSuggestion,
         };
@@ -425,12 +422,17 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
     };
 
     keyBindingFn = (event) => {
-        const { ValuePopOverProps } = this.props;
+        const { ValuePopOverProps, initialContent } = this.props;
+        const { valueSearchOpen } = this.state;
         if (KeyBindingUtil.hasCommandModifier(event) && event.keyCode === 13) {
             return 'submit';
         }
-        if (ValuePopOverProps && event.keyCode === 27) {
-            this.setState({ valueSearchOpen: false });
+        if (event.keyCode === 27) {
+            if (ValuePopOverProps && valueSearchOpen) {
+                this.setState({ valueSearchOpen: false });
+            } else {
+                return 'submit';
+            }
         }
         if (ValuePopOverProps && event.keyCode === 51) {
             // blur editor when # is used for value mention
@@ -497,10 +499,10 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         return newState;
     };
 
-    insertEntityAtCursor = (value: { [key: string]: string }, key: string) => {
+    insertEntityAtCursor = (value: { [key: string]: string }, key: string, mentionType = 'mention') => {
         const { editorState } = this.state;
 
-        const stateWithEntity = editorState.getCurrentContent().createEntity('mention', 'IMMUTABLE', {
+        const stateWithEntity = editorState.getCurrentContent().createEntity(mentionType, 'IMMUTABLE', {
             mention: value,
         });
         const entityKey = stateWithEntity.getLastCreatedEntityKey();
@@ -510,6 +512,12 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
 
     onOutsideClick = () => {
         this.setState({ valueSearchOpen: false });
+    };
+
+    getEditorContainerRect = () => {
+        if (this.editorRef.current) {
+            return this.editorRef.current.getEditorRef().editor.getBoundingClientRect();
+        }
     };
 
     onOpenValueChange = (value) => {
@@ -584,7 +592,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
                     textAlignment={textAlignment as any}
                     handleKeyCommand={this.handleKeyCommand}
                     customStyleMap={CUSTOM_STYLE_MAP}
-                    plugins={this.mentionSuggestionList?.plugins}
+                    plugins={this.plugins}
                     handleReturn={this.handleReturn}
                     keyBindingFn={keyBindingFn}
                     readOnly={readOnly}
