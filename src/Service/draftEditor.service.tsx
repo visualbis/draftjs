@@ -241,8 +241,6 @@ const convertToHTMLString = (
                         title={dynamicMention ? entity.data.mention?.title : null}
                         style={{
                             ...mentionAnchorStyle,
-                            color: entity.data.mention?.color,
-                            backgroundColor: 'transparent',
                         }}
                         data-value={JSON.stringify({
                             ...entity.data.mention,
