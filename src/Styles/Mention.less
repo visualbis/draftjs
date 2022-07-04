@@ -2,7 +2,7 @@
 
 // }
 
-.list_container{
+.list_container {
     display: flex;
     flex-direction: column;
     background-color: #ffffff;
@@ -12,7 +12,7 @@
     min-width: 150px;
     position: fixed;
     max-height: 100px;
-    overflow-y:  auto;
+    overflow-y: auto;
     .menu-loading {
         border: 2px solid #f3f3f3;
         border-radius: 50%;
@@ -23,32 +23,31 @@
         animation: spin 1s linear infinite;
         left: calc(50% - 25px) !important;
         position: relative;
-      }
-
-    & > div{
-        width: 100%;
     }
 
+    & > div {
+        width: 100%;
+    }
 }
-.list_item{
+.list_item {
     display: flex;
     align-items: center;
-    padding: 5px 10px;
+    padding: 5px 5px;
     // &:hover{
     //     background-color: #e6f3ff;
     // }
-
 }
-.list_icon{
+.list_icon {
     display: flex;
 }
-.list-title{
+.list-title {
     font-size: 12px;
     color: #666;
+    padding-left: 5px;
 }
 .mention-list {
-    width:220px;
-    img{
+    width: 220px;
+    img {
         width: 30px;
         height: 30px;
         border-radius: 50%;
@@ -63,19 +62,32 @@
     padding: 16px;
     border-radius: 2px;
     margin-bottom: 2em;
-    box-shadow: inset 0px 1px 8px -3px #ABABAB;
+    box-shadow: inset 0px 1px 8px -3px #ababab;
     background: #fefefe;
-  }
-  
-  .editor :global(.public-DraftEditor-content) {
+}
+
+.editor :global(.public-DraftEditor-content) {
     min-height: 140px;
-  }
+}
+
+.value-mention-title-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    .value-mention-title {
+        display: flex;
+    }
+    .mention-chevron {
+        color: #8b8686;
+    }
+}
 
 // .mention {
 //     color: #4a85bb;
 //     text-decoration: none;
 //   }
-  
+
 //   .mentionSuggestions {
 //     border-top: 1px solid #eee;
 //     background: #fff;
@@ -90,52 +102,52 @@
 //     transform: scaleY(0);
 //     margin: -16px;
 //   }
-  
+
 //   .mentionSuggestionsEntryContainer {
 //     display: table;
 //     width: 100%;
 //   }
-  
+
 //   .mentionSuggestionsEntryContainerLeft,
 //   .mentionSuggestionsEntryContainerRight {
 //     display: table-cell;
 //     vertical-align: middle;
 //   }
-  
+
 //   .mentionSuggestionsEntryContainerRight {
 //     width: 100%;
 //     padding-left: 8px;
 //   }
-  
+
 //   .mentionSuggestionsEntry {
 //     padding: 7px 10px 3px 10px;
 //     transition: background-color 0.4s cubic-bezier(.27,1.27,.48,.56);
 //   }
-  
+
 //   .mentionSuggestionsEntry:active {
 //     background-color: #cce7ff;
 //   }
-  
+
 //   .mentionSuggestionsEntryFocused {
 //     // composes: mentionSuggestionsEntry;
 //     background-color: #e6f3ff;
 //   }
-  
+
 //   .mentionSuggestionsEntryText,
 //   .mentionSuggestionsEntryTitle {
 //     white-space: nowrap;
 //     overflow: hidden;
 //     text-overflow: ellipsis;
 //   }
-  
+
 // //   .mentionSuggestionsEntryText {
 // //   }
-  
+
 //   .mentionSuggestionsEntryTitle {
 //     font-size: 80%;
 //     color: #a7a7a7;
 //   }
-  
+
 //   .mentionSuggestionsEntryAvatar {
 //     display: block;
 //     width: 30px;
@@ -153,7 +165,7 @@
 //     box-shadow: inset 0px 1px 8px -3px #ABABAB;
 //     background: #fefefe;
 //   }
-  
+
 //   .editor :global(.public-DraftEditor-content) {
 //     min-height: 140px;
 //   }

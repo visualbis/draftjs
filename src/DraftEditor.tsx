@@ -1,6 +1,6 @@
 import { default as Editor } from '@draft-js-plugins/editor';
 import { onDraftEditorCopy, onDraftEditorCut, handleDraftEditorPastedText } from 'draftjs-conductor';
-import createMentionPlugin from '@draft-js-plugins/mention';
+import createMentionPlugin, { MentionData } from '@draft-js-plugins/mention';
 import createLinkifyPlugin from 'draft-js-link-detection-plugin';
 import '@draft-js-plugins/mention/lib/plugin.css';
 import {
@@ -17,6 +17,7 @@ import 'draft-js/dist/Draft.css';
 import React, { Component, Fragment, ReactElement } from 'react';
 import PopOverContainer from './Components/PopOverContainer';
 import SuggestionList from './Components/SuggestionList';
+import ValueMentionSuggestionList from './Components/ValueMentionSuggestionList';
 import {
     convertFromHTMLString,
     convertToHTMLString,
@@ -64,6 +65,9 @@ interface IDraftEditorProps {
     ValuePopOverProps?: (props) => JSX.Element;
     updateFormat?: (format: IElementFormats) => void;
     decorators?: DraftDecorator[];
+    onValueMentionInput?: (value: string) => void;
+    isLinkifyEnable?: boolean;
+    getMentionDataById?: (id: string) => { text: string; color: string; key: string; value: string };
 }
 export interface IElementFormats {
     fontFamily?: string;
@@ -105,7 +109,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
     private plugins: any;
     constructor(props: IDraftEditorProps) {
         super(props);
-        const { initialContent, showMention } = props;
+        const { initialContent, showMention, isLinkifyEnable = true } = props;
         this.mentionSuggestionList = null;
         this.editorRef = React.createRef();
         this.state = {
@@ -115,7 +119,10 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
             peopleSearchOpen: false,
             suggestions: props.valueSuggestion,
         };
-        this.plugins = [linkifyPlugin];
+        this.plugins = [];
+        if (isLinkifyEnable) {
+            this.plugins.push(linkifyPlugin);
+        }
         if (props.decorators) {
             this.plugins.push({ decorators: props.decorators });
         }
@@ -353,7 +360,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
     };
 
     MentionComponents = () => {
-        const { showMention, decorators } = this.props;
+        const { showMention } = this.props;
         const mentionPlugin_PREFIX_ONE = showMention.people
             ? createMentionPlugin({
                   mentionTrigger: MENTION_SUGGESTION_NAME.PREFIX_ONE,
@@ -363,9 +370,10 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
             : { MentionSuggestions: null };
         const mentionPlugin_PREFIX_TWO = showMention.value
             ? createMentionPlugin({
-                  mentionTrigger: MENTION_SUGGESTION_NAME.PREFIX_TWO,
-                  supportWhitespace: false,
+                  mentionTrigger: [MENTION_SUGGESTION_NAME.PREFIX_TWO, '.'],
+                  supportWhitespace: true,
                   entityMutability: 'IMMUTABLE',
+                  mentionRegExp: '.',
               })
             : { MentionSuggestions: null };
 
@@ -403,9 +411,11 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
     };
 
     onSearchChange = ({ trigger, value }: { trigger: string; value: string }) => {
-        const { onMentionInput, valueSuggestion } = this.props;
+        const { onMentionInput, valueSuggestion, onValueMentionInput } = this.props;
         if (trigger === MENTION_SUGGESTION_NAME.PREFIX_ONE) {
             onMentionInput?.(value);
+        } else if (onValueMentionInput) {
+            onValueMentionInput?.(value);
         } else {
             this.setState({
                 suggestions: this.onCustomSuggestionsFilter(value, valueSuggestion),
@@ -413,10 +423,15 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         }
     };
     handleReturn = (e: React.KeyboardEvent<{}>) => {
-        const { editorState } = this.state;
+        const { editorState, valueSearchOpen } = this.state;
         if (e.shiftKey) {
             this.setState({ editorState: RichUtils.insertSoftNewline(editorState) });
             return 'handled';
+        }
+        if (valueSearchOpen) {
+            if ((e.code = 'Enter')) {
+                return 'handled';
+            }
         }
         return 'not-handled';
     };
@@ -429,6 +444,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         }
         if (event.keyCode === 27) {
             if (ValuePopOverProps && valueSearchOpen) {
+                console.log('keybind');
                 this.setState({ valueSearchOpen: false });
             } else {
                 return 'submit';
@@ -489,7 +505,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         );
 
         this.setState({
-            editorState: newState,
+            editorState: this.moveSelectionToEnd(newState),
         });
 
         setTimeout(() => {
@@ -568,12 +584,43 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
             onFocus,
             valueSuggestion,
             ValuePopOverProps,
+            onValueMentionInput,
+            getMentionDataById,
         } = this.props;
         const { editorState, peopleSearchOpen, valueSearchOpen, suggestions, format } = this.state;
         const MentionComp = this.mentionSuggestionList?.MentionSuggestions;
         const ValueMentionComp = this.mentionSuggestionList?.ValueSuggestion;
-        const keyBindingFn = !peopleSearchOpen ? this.keyBindingFn : undefined;
-        const PopoverComponent = ValuePopOverProps ? ValuePopOverProps : PopOverContainer;
+        const keyBindingFn = peopleSearchOpen || valueSearchOpen ? undefined : this.keyBindingFn;
+        const SuggestionListComp = ValuePopOverProps
+            ? ValuePopOverProps
+            : onValueMentionInput
+            ? ValueMentionSuggestionList({
+                  onmousedown: (mention: MentionData, searchValue: string) => {
+                      if (mention.isLeaf) {
+                          this.insertTextAtCursor('', searchValue.length + 1, '#333');
+                          setTimeout(() => {
+                              const data = getMentionDataById(mention.id as string);
+                              this.insertEntityAtCursor(data, data.value, '#mention');
+                          }, 200);
+                          return;
+                      }
+                      const isParent = mention.parent && mention.parent.length > 0;
+                      const string = `${(isParent ? mention.parent : []).join('.')}${isParent ? '.' : ''}${
+                          mention.id
+                      }.`;
+                      this.insertTextAtCursor(string, searchValue.length);
+                      setTimeout(() => {
+                          const { editorState } = this.state;
+                          this.setState({ editorState: this.moveSelectionToEnd(editorState), valueSearchOpen: true });
+                      }, 200);
+                      onValueMentionInput === null || onValueMentionInput === void 0
+                          ? void 0
+                          : onValueMentionInput(string);
+                  },
+              })
+            : SuggestionList;
+        const valueSuggestionList = onValueMentionInput ? valueSuggestion : suggestions;
+
         return (
             <Fragment>
                 {toolbarComponent &&
@@ -622,10 +669,10 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
                     <ValueMentionComp
                         open={valueSearchOpen}
                         onOpenChange={this.onOpenValueChange}
-                        suggestions={suggestions}
+                        suggestions={valueSuggestionList}
                         onSearchChange={this.onSearchChange}
-                        entryComponent={SuggestionList}
-                        popoverContainer={PopoverComponent}
+                        entryComponent={SuggestionListComp}
+                        popoverContainer={PopOverContainer}
                     />
                 )}
             </Fragment>
