@@ -1,20 +1,8 @@
 import { MentionData, MentionPluginTheme } from '@draft-js-plugins/mention';
 import React, { MouseEvent } from 'react';
 import '../Styles';
+import { EntryComponentProps } from './SuggestionList';
 
-export interface EntryComponentProps {
-    className?: string;
-    onMouseDown(event: MouseEvent): void;
-    onMouseUp(event: MouseEvent): void;
-    onMouseEnter(event: MouseEvent): void;
-    role: string;
-    id: string;
-    'aria-selected'?: boolean | 'false' | 'true';
-    theme?: MentionPluginTheme;
-    mention: MentionData;
-    isFocused: boolean;
-    searchValue?: string;
-}
 interface IListProps {
     onmousedown: (value: MentionData, searchValue: string) => void;
 }
