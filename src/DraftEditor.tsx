@@ -460,16 +460,19 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         return getDefaultKeyBinding(event);
     };
 
-    insertTextAtCursor = (textToInsert: string, offset: number = 0, textColor?: string) => {
+    insertTextAtCursor = (textToInsert: string, offset: number = 0, textColor?: string, replaceSelection = false) => {
         const { editorState } = this.state;
         const { onFocus } = this.props;
         const textInlineStyle = textColor ? `color__${textColor}` : '';
         const currentContent = editorState.getCurrentContent();
-        const nextOffSet = editorState.getSelection().getFocusOffset();
-        const currentSelection = editorState.getSelection().merge({
-            focusOffset: nextOffSet,
-            anchorOffset: nextOffSet - offset,
-        });
+        let currentSelection = editorState.getSelection();
+        if (!replaceSelection) {
+            const nextOffSet = currentSelection.getFocusOffset();
+            currentSelection = currentSelection.merge({
+                focusOffset: nextOffSet,
+                anchorOffset: nextOffSet - offset,
+            });
+        }
         let newContent = Modifier.replaceText(currentContent, currentSelection, textToInsert);
         const newContentSelection = newContent.getSelectionAfter();
         const textToInsertSelection = newContentSelection.set(
@@ -516,7 +519,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         key: string,
         mentionType = 'mention',
         offset = 0,
-        updateEditor = true,
+        replaceSelection = false,
     ) => {
         const { editorState } = this.state;
 
@@ -524,11 +527,14 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
             mention: value,
         });
         const entityKey = stateWithEntity.getLastCreatedEntityKey();
-        const nextOffSet = editorState.getSelection().getFocusOffset();
-        const currentSelection = editorState.getSelection().merge({
-            focusOffset: nextOffSet,
-            anchorOffset: nextOffSet - offset,
-        });
+        let currentSelection = editorState.getSelection();
+        if (!replaceSelection) {
+            const nextOffSet = currentSelection.getFocusOffset();
+            currentSelection = currentSelection.merge({
+                focusOffset: nextOffSet,
+                anchorOffset: nextOffSet - offset,
+            });
+        }
         const stateWithText = Modifier.replaceText(stateWithEntity, currentSelection, key, null, entityKey);
         this.updateData(EditorState.push(editorState, stateWithText, 'insert-fragment'));
         setTimeout(() => {
@@ -600,7 +606,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         }
         if (!mention.hasLeaf) {
             const data = getMentionDataById(mention.id);
-            this.insertEntityAtCursor(data, data.value, '#mention', length + 1, false);
+            this.insertEntityAtCursor(data, data.value, '#mention', length + 1);
             onValueMentionInput('');
             this.setState({ valueSearchOpen: false });
             return;
