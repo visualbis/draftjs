@@ -7,16 +7,9 @@ interface IListProps {
     onmousedown: (value: MentionData, searchValue: string) => void;
 }
 
-const DataPoint = ({ className }) => {
+const DataPoint = () => {
     return (
-        <svg
-            className={className}
-            width="14"
-            height="14"
-            viewBox="0 0 14 14"
-            fill="none"
-            xmlns="https://www.w3.org/2000/svg"
-        >
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="https://www.w3.org/2000/svg">
             <path
                 fillRule="evenodd"
                 clipRule="evenodd"
@@ -59,26 +52,23 @@ const SuggestionListComp = (listProps: IListProps) =>
             };
 
             return (
-                <div
-                    {...newProps}
-                    onKeyDown={(e) => console.log('enter')}
-                    className={`list_container_item ${isFocused ? 'focused' : ''}`}
-                >
+                <div {...newProps} className={`list_container_item ${isFocused ? 'focused' : ''}`}>
                     <div className={`${theme?.mentionSuggestionsEntryContainer} ${'list_item'}`}>
-                        <div className={`${theme?.mentionSuggestionsEntryContainerLeft} ${'list_icon'}`}>
-                            <DataPoint className={theme?.mentionSuggestionsEntryAvatar} />
-                        </div>
-
-                        <div className={theme?.mentionSuggestionsEntryContainerRight}>
+                        <div className="value-mention-title-container">
+                            {!mention.hasLeaf && (
+                                <div className={'list_icon'}>
+                                    <DataPoint />
+                                </div>
+                            )}
                             <div className={`${theme?.mentionSuggestionsEntryTitle} ${'list-title'}`}>
                                 {mention.label}
                             </div>
                         </div>
-                        {!mention.isLeaf && (
+                        {/* {!mention.hasLeaf && (
                             <div className={theme?.mentionSuggestionsEntryText} style={{ marginLeft: 0 }}>
                                 <i className="mention-chevron ms-Icon ms-Icon--ChevronRightSmall" />
                             </div>
-                        )}
+                        )} */}
                     </div>
                 </div>
             );

@@ -30,9 +30,14 @@
     }
 }
 .list_item {
-    display: flex;
-    align-items: center;
     padding: 5px 5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    .mention-chevron {
+        color: #8b8686;
+    }
     // &:hover{
     //     background-color: #e6f3ff;
     // }
@@ -44,6 +49,8 @@
     font-size: 12px;
     color: #666;
     padding-left: 5px;
+    display: flex;
+    align-items: center;
 }
 .mention-list {
     width: 220px;
@@ -72,14 +79,8 @@
 
 .value-mention-title-container {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
     .value-mention-title {
         display: flex;
-    }
-    .mention-chevron {
-        color: #8b8686;
     }
 }
 
