@@ -66,7 +66,7 @@ interface IDraftEditorProps {
     updateFormat?: (format: IElementFormats) => void;
     decorators?: DraftDecorator[];
     onValueMentionInput?: (value: string) => void;
-    isLinkifyEnable?: boolean;
+    disableLinkify?: boolean;
     getMentionDataById?: (id: string) => { text: string; color: string; key: string; value: string };
 }
 export interface IElementFormats {
@@ -109,7 +109,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
     private plugins: any;
     constructor(props: IDraftEditorProps) {
         super(props);
-        const { initialContent, showMention, isLinkifyEnable = true } = props;
+        const { initialContent, showMention, disableLinkify = false } = props;
         this.mentionSuggestionList = null;
         this.editorRef = React.createRef();
         this.state = {
@@ -120,7 +120,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
             suggestions: props.valueSuggestion,
         };
         this.plugins = [];
-        if (isLinkifyEnable) {
+        if (!disableLinkify) {
             this.plugins.push(linkifyPlugin);
         }
         if (props.decorators) {
@@ -471,9 +471,10 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
             anchorOffset: nextOffSet - offset,
         });
         let newContent = Modifier.replaceText(currentContent, currentSelection, textToInsert);
-        const textToInsertSelection = currentSelection.set(
+        const newContentSelection = newContent.getSelectionAfter();
+        const textToInsertSelection = newContentSelection.set(
             'focusOffset',
-            currentSelection.getFocusOffset() + textToInsert.length,
+            newContentSelection.getFocusOffset(),
         ) as SelectionState;
 
         let inlineStyles = editorState.getCurrentInlineStyle();
@@ -489,41 +490,52 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
             newState = EditorState.forceSelection(
                 //  force seletion entered text
                 newState,
-                textToInsertSelection.set(
-                    'focusOffset',
-                    textToInsertSelection.getAnchorOffset() + textToInsert.length,
-                ) as SelectionState,
+                textToInsertSelection.set('focusOffset', textToInsertSelection.getAnchorOffset()) as SelectionState,
             );
             newState = formatText(newState, formatKeys.color, `${formatKeys.color}__${textColor}`); //format selection state
         }
         newState = EditorState.forceSelection(
             newState,
-            textToInsertSelection.set(
-                'anchorOffset',
-                textToInsertSelection.getAnchorOffset() + textToInsert.length,
-            ) as SelectionState,
+            textToInsertSelection.set('focusOffset', textToInsertSelection.getAnchorOffset()) as SelectionState,
         );
 
         this.setState({
-            editorState: this.moveSelectionToEnd(newState),
+            editorState: newState,
         });
 
         setTimeout(() => {
             // after adding selected text, reset focus ref
+            this.editorRef.current.focus();
             onFocus && onFocus();
         }, 200);
         return newState;
     };
 
-    insertEntityAtCursor = (value: { [key: string]: string }, key: string, mentionType = 'mention') => {
+    insertEntityAtCursor = (
+        value: { [key: string]: string },
+        key: string,
+        mentionType = 'mention',
+        offset = 0,
+        updateEditor = true,
+    ) => {
         const { editorState } = this.state;
 
         const stateWithEntity = editorState.getCurrentContent().createEntity(mentionType, 'IMMUTABLE', {
             mention: value,
         });
         const entityKey = stateWithEntity.getLastCreatedEntityKey();
-        const stateWithText = Modifier.insertText(stateWithEntity, editorState.getSelection(), key, null, entityKey);
+        const nextOffSet = editorState.getSelection().getFocusOffset();
+        const currentSelection = editorState.getSelection().merge({
+            focusOffset: nextOffSet,
+            anchorOffset: nextOffSet - offset,
+        });
+        const stateWithText = Modifier.replaceText(stateWithEntity, currentSelection, key, null, entityKey);
         this.updateData(EditorState.push(editorState, stateWithText, 'insert-fragment'));
+        setTimeout(() => {
+            // after adding selected text, reset focus ref
+            this.editorRef.current.focus();
+            // onFocus && onFocus();
+        }, 200);
     };
 
     onOutsideClick = () => {
@@ -572,6 +584,36 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         }
     }
 
+    onMouseDownMention = (mention, searchValue) => {
+        const { getMentionDataById, onValueMentionInput } = this.props;
+        let length = searchValue.length;
+        if (mention.parent.length > 0) {
+            const searchArray = searchValue.split('.');
+            if (searchArray.length <= mention.parent.length) {
+                length = mention.parent.join('.').length + 1;
+            }
+        }
+        if (length === 0) {
+            const isParent = mention.parent && mention.parent.length > 0;
+            const string = `${(isParent ? mention.parent : []).join('.')}${isParent ? '.' : ''}`;
+            length = string.length;
+        }
+        if (!mention.hasLeaf) {
+            const data = getMentionDataById(mention.id);
+            this.insertEntityAtCursor(data, data.value, '#mention', length + 1, false);
+            onValueMentionInput('');
+            this.setState({ valueSearchOpen: false });
+            return;
+        }
+        const isParent = mention.parent && mention.parent.length > 0;
+        const string = `${(isParent ? mention.parent : []).join('.')}${isParent ? '.' : ''}${mention.label}.`;
+        this.insertTextAtCursor(string, length);
+        setTimeout(() => {
+            this.setState({ valueSearchOpen: true });
+        }, 200);
+        onValueMentionInput === null || onValueMentionInput === void 0 ? void 0 : onValueMentionInput(string);
+    };
+
     render() {
         const {
             textAlignment,
@@ -585,7 +627,6 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
             valueSuggestion,
             ValuePopOverProps,
             onValueMentionInput,
-            getMentionDataById,
         } = this.props;
         const { editorState, peopleSearchOpen, valueSearchOpen, suggestions, format } = this.state;
         const MentionComp = this.mentionSuggestionList?.MentionSuggestions;
@@ -595,28 +636,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
             ? ValuePopOverProps
             : onValueMentionInput
             ? ValueMentionSuggestionList({
-                  onmousedown: (mention: MentionData, searchValue: string) => {
-                      if (mention.isLeaf) {
-                          this.insertTextAtCursor('', searchValue.length + 1, '#333');
-                          setTimeout(() => {
-                              const data = getMentionDataById(mention.id as string);
-                              this.insertEntityAtCursor(data, data.value, '#mention');
-                          }, 200);
-                          return;
-                      }
-                      const isParent = mention.parent && mention.parent.length > 0;
-                      const string = `${(isParent ? mention.parent : []).join('.')}${isParent ? '.' : ''}${
-                          mention.id
-                      }.`;
-                      this.insertTextAtCursor(string, searchValue.length);
-                      setTimeout(() => {
-                          const { editorState } = this.state;
-                          this.setState({ editorState: this.moveSelectionToEnd(editorState), valueSearchOpen: true });
-                      }, 200);
-                      onValueMentionInput === null || onValueMentionInput === void 0
-                          ? void 0
-                          : onValueMentionInput(string);
-                  },
+                  onmousedown: this.onMouseDownMention,
               })
             : SuggestionList;
         const valueSuggestionList = onValueMentionInput ? valueSuggestion : suggestions;
@@ -662,7 +682,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
                         suggestions={peopleSuggestion || []}
                         onSearchChange={this.onSearchChange}
                         entryComponent={SuggestionList}
-                        popoverContainer={PopOverContainer}
+                        popoverContainer={PopOverContainer({ width: 220 })}
                     />
                 )}
                 {ValueMentionComp && (
@@ -672,7 +692,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
                         suggestions={valueSuggestionList}
                         onSearchChange={this.onSearchChange}
                         entryComponent={SuggestionListComp}
-                        popoverContainer={PopOverContainer}
+                        popoverContainer={PopOverContainer({ width: 120 })}
                     />
                 )}
             </Fragment>
