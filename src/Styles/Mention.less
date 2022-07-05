@@ -13,6 +13,7 @@
     position: fixed;
     max-height: 100px;
     overflow-y: auto;
+    overflow-x: hidden;
     .menu-loading {
         border: 2px solid #f3f3f3;
         border-radius: 50%;
@@ -49,8 +50,11 @@
     font-size: 12px;
     color: #666;
     padding-left: 5px;
-    display: flex;
-    align-items: center;
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 95px;
 }
 .mention-list {
     width: 220px;

@@ -60,7 +60,10 @@ const SuggestionListComp = (listProps: IListProps) =>
                                     <DataPoint />
                                 </div>
                             )}
-                            <div className={`${theme?.mentionSuggestionsEntryTitle} ${'list-title'}`}>
+                            <div
+                                title={mention.label}
+                                className={`${theme?.mentionSuggestionsEntryTitle} ${'list-title'}`}
+                            >
                                 {mention.label}
                             </div>
                         </div>
