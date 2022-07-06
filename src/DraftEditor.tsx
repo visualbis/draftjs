@@ -119,6 +119,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
             peopleSearchOpen: false,
             suggestions: props.valueSuggestion,
         };
+
         this.plugins = [];
         if (!disableLinkify) {
             this.plugins.push(linkifyPlugin);
@@ -638,13 +639,13 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         const MentionComp = this.mentionSuggestionList?.MentionSuggestions;
         const ValueMentionComp = this.mentionSuggestionList?.ValueSuggestion;
         const keyBindingFn = peopleSearchOpen || valueSearchOpen ? undefined : this.keyBindingFn;
-        const SuggestionListComp = ValuePopOverProps
-            ? ValuePopOverProps
-            : onValueMentionInput
+        const SuggestionListComp = onValueMentionInput
             ? ValueMentionSuggestionList({
                   onmousedown: this.onMouseDownMention,
               })
             : SuggestionList;
+
+        const PopOverContainerMention = ValuePopOverProps ? ValuePopOverProps : PopOverContainer({ width: 120 });
         const valueSuggestionList = onValueMentionInput ? valueSuggestion : suggestions;
 
         return (
@@ -698,7 +699,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
                         suggestions={valueSuggestionList}
                         onSearchChange={this.onSearchChange}
                         entryComponent={SuggestionListComp}
-                        popoverContainer={PopOverContainer({ width: 120 })}
+                        popoverContainer={PopOverContainerMention}
                     />
                 )}
             </Fragment>
