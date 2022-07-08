@@ -715,16 +715,16 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
                         popoverContainer={PopOverContainer({ width: 220 })}
                     />
                 )}
-                {/* {ValueMentionComp && ( */}
-                <ValueMentionComp
-                    open={valueSearchOpen}
-                    onOpenChange={this.onOpenValueChange}
-                    suggestions={valueSuggestionList}
-                    onSearchChange={this.onSearchChange}
-                    entryComponent={SuggestionListComp}
-                    popoverContainer={PopOverContainerMention}
-                />
-                {/* )} */}
+                {ValueMentionComp && (
+                    <ValueMentionComp
+                        open={valueSearchOpen}
+                        onOpenChange={this.onOpenValueChange}
+                        suggestions={valueSuggestionList}
+                        onSearchChange={this.onSearchChange}
+                        entryComponent={SuggestionListComp}
+                        popoverContainer={PopOverContainerMention}
+                    />
+                )}
             </Fragment>
         );
     }
