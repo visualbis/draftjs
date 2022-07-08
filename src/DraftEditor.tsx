@@ -99,6 +99,7 @@ interface IDraftEditorState {
     valueSearchOpen?: boolean;
     peopleSearchOpen?: boolean;
     suggestions?: any[];
+    searchString?: string;
 }
 
 const linkifyPlugin = createLinkifyPlugin();
@@ -118,6 +119,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
             valueSearchOpen: false,
             peopleSearchOpen: false,
             suggestions: props.valueSuggestion,
+            searchString: '',
         };
 
         this.plugins = [];
@@ -150,7 +152,9 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
 
     UNSAFE_componentWillReceiveProps(newProps) {
         if (newProps.initialContent === '') {
-            this.setState({ editorState: EditorState.createWithContent(convertFromHTMLString('')) });
+            this.setState({
+                editorState: EditorState.createWithContent(convertFromHTMLString('')),
+            });
         }
     }
 
@@ -306,7 +310,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         const htmlText = convertToHTMLString(
             editorStateUpdated,
             this.props.isColorRequired,
-            !!this.props.ValuePopOverProps,
+            !!(this.props.onValueMentionInput || this.props.ValuePopOverProps),
         );
         this.setState({
             editorState: editorStateUpdated,
@@ -416,6 +420,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         if (trigger === MENTION_SUGGESTION_NAME.PREFIX_ONE) {
             onMentionInput?.(value);
         } else if (onValueMentionInput) {
+            this.setState({ searchString: value });
             onValueMentionInput?.(value);
         } else {
             this.setState({
@@ -424,32 +429,49 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         }
     };
     handleReturn = (e: React.KeyboardEvent<{}>) => {
-        const { editorState, valueSearchOpen } = this.state;
+        const { editorState, valueSearchOpen, searchString } = this.state;
+        const { valueSuggestion } = this.props;
+
         if (e.shiftKey) {
             this.setState({ editorState: RichUtils.insertSoftNewline(editorState) });
             return 'handled';
         }
         if (valueSearchOpen) {
             if ((e.code = 'Enter')) {
+                const mention = JSON.parse(
+                    (document.querySelector('.value-mention-item-focused') as HTMLElement).dataset.value,
+                );
+                const isParent = mention.parent && mention.parent.length > 0;
+                const string = `${(isParent ? mention.parent : []).join('.')}${isParent ? '.' : ''}${mention.label}.`;
+                this.setState({ searchString: string });
+                this.onMouseDownMention(mention, searchString);
+
                 return 'handled';
             }
         }
+        // if (valueSearchOpen) {
+        //     if (e.key === 'ArrowUp') {
+        //         this.setState({
+        //             selectedMentionIndex:
+        //                 selectedMentionIndex !== 0 ? selectedMentionIndex - 1 : valueSuggestion.length - 1,
+        //         });
+        //     } else if (e.key === 'ArrowDown') {
+        //         this.setState({
+        //             selectedMentionIndex:
+        //                 valueSuggestion.length - 1 === selectedMentionIndex ? 0 : selectedMentionIndex + 1,
+        //         });
+        //     }
+        // }
         return 'not-handled';
     };
 
     keyBindingFn = (event) => {
-        const { ValuePopOverProps, initialContent } = this.props;
-        const { valueSearchOpen } = this.state;
+        const { ValuePopOverProps, onValueMentionInput } = this.props;
         if (KeyBindingUtil.hasCommandModifier(event) && event.keyCode === 13) {
             return 'submit';
         }
         if (event.keyCode === 27) {
-            if (ValuePopOverProps && valueSearchOpen) {
-                console.log('keybind');
-                this.setState({ valueSearchOpen: false });
-            } else {
-                return 'submit';
-            }
+            return 'submit';
         }
         if (ValuePopOverProps && event.keyCode === 51) {
             // blur editor when # is used for value mention
@@ -609,14 +631,14 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
             const data = getMentionDataById(mention.id);
             this.insertEntityAtCursor(data, data.value, '#mention', length + 1);
             onValueMentionInput('');
-            this.setState({ valueSearchOpen: false });
+            this.setState({ valueSearchOpen: false, searchString: '' });
             return;
         }
         const isParent = mention.parent && mention.parent.length > 0;
         const string = `${(isParent ? mention.parent : []).join('.')}${isParent ? '.' : ''}${mention.label}.`;
         this.insertTextAtCursor(string, length);
         setTimeout(() => {
-            this.setState({ valueSearchOpen: true });
+            this.setState({ valueSearchOpen: true, searchString: searchValue });
         }, 200);
         onValueMentionInput === null || onValueMentionInput === void 0 ? void 0 : onValueMentionInput(string);
     };
@@ -638,7 +660,8 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         const { editorState, peopleSearchOpen, valueSearchOpen, suggestions, format } = this.state;
         const MentionComp = this.mentionSuggestionList?.MentionSuggestions;
         const ValueMentionComp = this.mentionSuggestionList?.ValueSuggestion;
-        const keyBindingFn = peopleSearchOpen || valueSearchOpen ? undefined : this.keyBindingFn;
+        const keyBindingFn =
+            peopleSearchOpen || (valueSearchOpen && onValueMentionInput) ? undefined : this.keyBindingFn;
         const SuggestionListComp = onValueMentionInput
             ? ValueMentionSuggestionList({
                   onmousedown: this.onMouseDownMention,
@@ -647,7 +670,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
 
         const PopOverContainerMention = ValuePopOverProps ? ValuePopOverProps : PopOverContainer({ width: 120 });
         const valueSuggestionList = onValueMentionInput ? valueSuggestion : suggestions;
-
+        // console.log(this.mentionRef);
         return (
             <Fragment>
                 {toolbarComponent &&

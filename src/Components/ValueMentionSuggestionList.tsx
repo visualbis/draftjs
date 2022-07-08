@@ -38,11 +38,10 @@ const SuggestionListComp = (listProps: IListProps) =>
             const {
                 mention,
                 theme,
+                isFocused,
                 searchValue, // eslint-disable-line @typescript-eslint/no-unused-vars
-                isFocused, // eslint-disable-line @typescript-eslint/no-unused-vars
                 ...parentProps
             } = this.props;
-
             const newProps = {
                 className: parentProps.className,
                 role: parentProps.role,
@@ -50,9 +49,15 @@ const SuggestionListComp = (listProps: IListProps) =>
                 onMouseDown: () => listProps.onmousedown(mention, searchValue),
                 onKeyDown: (e) => {},
             };
-
+            // const isSelected = listProps.selectedMentionId === mention.id;
             return (
-                <div {...newProps} className={`list_container_item ${isFocused ? 'focused' : ''}`}>
+                <div
+                    {...newProps}
+                    data-value={JSON.stringify(mention)}
+                    className={` value-mention-item-${isFocused ? 'focused' : ''} list_container_item ${
+                        isFocused ? 'focused' : ''
+                    }`}
+                >
                     <div className={`${theme?.mentionSuggestionsEntryContainer} ${'list_item'}`}>
                         <div className="value-mention-title-container">
                             {!mention.hasLeaf && (
