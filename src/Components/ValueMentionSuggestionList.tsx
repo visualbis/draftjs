@@ -1,5 +1,5 @@
-import { MentionData, MentionPluginTheme } from '@draft-js-plugins/mention';
-import React, { MouseEvent } from 'react';
+import { MentionData } from '@draft-js-plugins/mention';
+import React from 'react';
 import '../Styles';
 import { EntryComponentProps } from './SuggestionList';
 
@@ -47,16 +47,13 @@ const SuggestionListComp = (listProps: IListProps) =>
                 role: parentProps.role,
                 id: parentProps.id,
                 onMouseDown: () => listProps.onmousedown(mention, searchValue),
-                onKeyDown: (e) => {},
             };
-            // const isSelected = listProps.selectedMentionId === mention.id;
             return (
                 <div
                     {...newProps}
                     data-value={JSON.stringify(mention)}
-                    className={` value-mention-item-${isFocused ? 'focused' : ''} list_container_item ${
-                        isFocused ? 'focused' : ''
-                    }`}
+                    className={` value-mention-item-${isFocused ? 'focused' : ''} list_container_item ${isFocused ? 'focused' : ''
+                        }`}
                 >
                     <div className={`${theme?.mentionSuggestionsEntryContainer} ${'list_item'}`}>
                         <div className="value-mention-title-container">
