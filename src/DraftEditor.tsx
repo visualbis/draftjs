@@ -104,6 +104,9 @@ interface IDraftEditorState {
 }
 
 const linkifyPlugin = createLinkifyPlugin();
+const PeoplePopOverContainer = PopOverContainer({width: 220});
+const ValuePopOverContainer = PopOverContainer({width: 120});
+
 
 class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
     private mentionSuggestionList: any;
@@ -717,9 +720,8 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         })
         : SuggestionList;
         
-        const PopOverContainerMention = ValuePopOverProps ? ValuePopOverProps : PopOverContainer({ width: 120 });
+        const PopOverContainerMention = ValuePopOverProps ? ValuePopOverProps : ValuePopOverContainer;
         const valueSuggestionList = onValueMentionInput ? valueSuggestion : suggestions;
-        const peoplePopOverContainer = PopOverContainer({ width: 220 })
         return (
             <Fragment>
                 {toolbarComponent &&
@@ -762,7 +764,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
                         suggestions={peopleSuggestion || []}
                         onSearchChange={this.onSearchChange}
                         entryComponent={SuggestionList}
-                        popoverContainer={peoplePopOverContainer}
+                        popoverContainer={PeoplePopOverContainer}
                     />
                 )}
                 {ValueMentionComp && (
