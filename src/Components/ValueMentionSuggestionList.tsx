@@ -46,6 +46,7 @@ const SuggestionListComp = (listProps: IListProps) =>
                 className: parentProps.className,
                 role: parentProps.role,
                 id: parentProps.id,
+                onMouseEnter: parentProps.onMouseEnter,
                 onMouseDown: () => listProps.onmousedown(mention, searchValue),
             };
             return (
