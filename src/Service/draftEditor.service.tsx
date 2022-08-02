@@ -20,6 +20,10 @@ export interface IDraftElementFormats {
     backgroundColor?: string;
     justifyContent?: string;
     strikeThrough?: boolean;
+    link?: {
+        url: string;
+        text?: string;
+    };
 }
 
 const resolveCustomStyleMap = (style: DraftInlineStyle) => {
@@ -38,10 +42,10 @@ const resolveCustomStyleMap = (style: DraftInlineStyle) => {
     return colObj;
 };
 
-const getFormat = (editorStateData: EditorState) => {
-    const style = editorStateData.getCurrentInlineStyle();
-    const selection = editorStateData.getSelection();
-    const blockType = editorStateData.getCurrentContent().getBlockForKey(selection.getStartKey()).getType();
+const getFormat = (editorState: EditorState) => {
+    const style = editorState.getCurrentInlineStyle();
+    const selection = editorState.getSelection();
+    const blockType = editorState.getCurrentContent().getBlockForKey(selection.getStartKey()).getType();
     const format: IDraftElementFormats = {
         bold: style.has(formatKeys.bold.toUpperCase()),
         italic: style.has(formatKeys.italic.toUpperCase()),
@@ -50,7 +54,9 @@ const getFormat = (editorStateData: EditorState) => {
         superScript: style.has(formatKeys.superScript.toUpperCase()),
         textAlign: blockType,
         strikeThrough: style.has(formatKeys.strikethrough.toUpperCase()),
+        link: getLinkState(editorState),
     };
+
     style.forEach((styleKey) => {
         if (styleKey) {
             styleValues.some((styleValue) => {
@@ -119,6 +125,17 @@ const moveColorToTop = (editorState: EditorState) => {
         return EditorState.push(editorState, contentState, 'change-inline-style');
     }
     return editorState;
+};
+
+const getSelectedText = (editorState: EditorState) => {
+    let selection = editorState.getSelection();
+    const anchorKey = selection.getAnchorKey();
+    const currentContent = editorState.getCurrentContent();
+    const currentBlock = currentContent.getBlockForKey(anchorKey);
+
+    const start = selection.getStartOffset();
+    const end = selection.getEndOffset();
+    return currentBlock.getText().slice(start, end);
 };
 
 const getContentFromEditorState = (editorStateUpdated: EditorState) => {
@@ -269,6 +286,22 @@ const convertToHTMLString = (
             return originalText;
         },
     })(editorState.getCurrentContent());
+};
+
+const getLinkState = (editorState: EditorState): IDraftElementFormats['link'] => {
+    const contentState = editorState.getCurrentContent();
+    const startKey = editorState.getSelection().getStartKey();
+    const startOffset = editorState.getSelection().getStartOffset();
+    const blockWithLinkAtBeginning = contentState.getBlockForKey(startKey);
+    const linkKey = blockWithLinkAtBeginning.getEntityAt(startOffset);
+    if (linkKey) {
+        const linkInstance = contentState.getEntity(linkKey);
+        return {
+            url: linkInstance.getData().url,
+            text: getSelectedText(editorState),
+        };
+    }
+    return null;
 };
 
 export {
