@@ -13,9 +13,9 @@
     "author": "Ramakrishnan",
     "license": "ISC",
     "dependencies": {
-        "@draft-js-plugins/editor": "^4.1.0",
         "@draft-js-plugins/inline-toolbar": "^4.1.6",
-        "@draft-js-plugins/mention": "^4.5.2",
+        "@draft-js-plugins/editor": "4.1.3",
+        "@draft-js-plugins/mention": "5.2.1",
         "@types/draft-convert": "^2.1.4",
         "@types/draft-js": "^0.11.5",
         "@types/draftjs-to-html": "^0.8.1",

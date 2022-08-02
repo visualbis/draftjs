@@ -121,6 +121,9 @@ const inlineToolbarPlugin = createInlineToolbarPlugin({
     },
 });
 const { InlineToolbar } = inlineToolbarPlugin;
+const PeoplePopOverContainer = PopOverContainer({width: 220});
+const ValuePopOverContainer = PopOverContainer({width: 120});
+
 
 class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
     private mentionSuggestionList: any;
@@ -510,7 +513,6 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
 
     handleReturn = (e: React.KeyboardEvent<{}>) => {
         const { editorState, valueSearchOpen, searchString } = this.state;
-        const { valueSuggestion } = this.props;
 
         if (e.shiftKey) {
             this.setState({ editorState: RichUtils.insertSoftNewline(editorState) });
@@ -533,8 +535,6 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
     };
 
     keyBindingFn = (event) => {
-        const { ValuePopOverProps, onValueMentionInput, valueSuggestion } = this.props;
-
         if (KeyBindingUtil.hasCommandModifier(event) && event.keyCode === 13) {
             return 'submit';
         }
@@ -737,6 +737,8 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         onValueMentionInput === null || onValueMentionInput === void 0 ? void 0 : onValueMentionInput(string);
     };
 
+    
+
     render() {
         const {
             textAlignment,
@@ -755,15 +757,16 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         const { editorState, peopleSearchOpen, valueSearchOpen, suggestions, format } = this.state;
         const MentionComp = this.mentionSuggestionList?.MentionSuggestions;
         const ValueMentionComp = this.mentionSuggestionList?.ValueSuggestion;
+        const isKeyEventNotAllowed = peopleSearchOpen || valueSearchOpen;
         const keyBindingFn =
-            peopleSearchOpen || (valueSearchOpen && onValueMentionInput) ? undefined : this.keyBindingFn;
-        const SuggestionListComp = onValueMentionInput
-            ? ValueMentionSuggestionList({
-                  onmousedown: this.onMouseDownMention,
-              })
-            : SuggestionList;
-
-        const PopOverContainerMention = ValuePopOverProps ? ValuePopOverProps : PopOverContainer({ width: 120 });
+        isKeyEventNotAllowed  ? undefined : this.keyBindingFn;
+        const SuggestionListComp =  onValueMentionInput
+        ? ValueMentionSuggestionList({
+            onmousedown: this.onMouseDownMention,
+        })
+        : SuggestionList;
+        
+        const PopOverContainerMention = ValuePopOverProps ? ValuePopOverProps : ValuePopOverContainer;
         const valueSuggestionList = onValueMentionInput ? valueSuggestion : suggestions;
         const setFormat = this.setFormat;
         // decorator for link only works when its passed from `decorator` prop.
@@ -829,7 +832,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
                         suggestions={peopleSuggestion || []}
                         onSearchChange={this.onSearchChange}
                         entryComponent={SuggestionList}
-                        popoverContainer={PopOverContainer({ width: 220 })}
+                        popoverContainer={PeoplePopOverContainer}
                     />
                 )}
                 {ValueMentionComp && (
@@ -838,8 +841,8 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
                         onOpenChange={this.onOpenValueChange}
                         suggestions={valueSuggestionList}
                         onSearchChange={this.onSearchChange}
-                        entryComponent={SuggestionListComp}
-                        popoverContainer={PopOverContainerMention}
+                        entryComponent={SuggestionListComp}                    
+                        popoverContainer={PopOverContainerMention}                        
                     />
                 )}
             </Fragment>
