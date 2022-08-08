@@ -16,6 +16,7 @@ import {
     Modifier,
     RichUtils,
     SelectionState,
+    DraftEditorCommand,
 } from 'draft-js';
 import 'draft-js/dist/Draft.css';
 import React, { Component, Fragment, ReactElement } from 'react';
@@ -31,6 +32,7 @@ import {
     IDraftElementFormats,
     resolveCustomStyleMap,
 } from './Service/draftEditor.service';
+import { Key } from './Service/Keycodes';
 import { CUSTOM_STYLE_MAP, formatKeys, MENTION_SUGGESTION_NAME } from './Service/UIconstants';
 import './Styles';
 
@@ -67,6 +69,7 @@ export interface IDraftEditorProps {
     getMentionDataById?: (id: string) => { text: string; color: string; key: string; value: string };
     inplaceToolbar?: boolean;
     linkDecorator?: DraftDecorator;
+    customKeyBinder?: (e: KeyboardEvent) => DraftEditorCommand;
 }
 
 export interface IContentTextChangeProps {
@@ -121,9 +124,8 @@ const inlineToolbarPlugin = createInlineToolbarPlugin({
     },
 });
 const { InlineToolbar } = inlineToolbarPlugin;
-const PeoplePopOverContainer = PopOverContainer({width: 220});
-const ValuePopOverContainer = PopOverContainer({width: 120});
-
+const PeoplePopOverContainer = PopOverContainer({ width: 220 });
+const ValuePopOverContainer = PopOverContainer({ width: 120 });
 
 class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
     private mentionSuggestionList: any;
@@ -534,14 +536,10 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         return 'not-handled';
     };
 
-    keyBindingFn = (event) => {
-        if (KeyBindingUtil.hasCommandModifier(event) && event.keyCode === 13) {
-            return 'submit';
+    keyBindingFn = (event): DraftEditorCommand => {
+        if ((KeyBindingUtil.hasCommandModifier(event) && event.keyCode === Key.Enter) || event.keyCode === Key.Escape) {
+            return 'submit' as DraftEditorCommand;
         }
-        if (event.keyCode === 27) {
-            return 'submit';
-        }
-
         return getDefaultKeyBinding(event);
     };
 
@@ -737,8 +735,6 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         onValueMentionInput === null || onValueMentionInput === void 0 ? void 0 : onValueMentionInput(string);
     };
 
-    
-
     render() {
         const {
             textAlignment,
@@ -758,14 +754,13 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         const MentionComp = this.mentionSuggestionList?.MentionSuggestions;
         const ValueMentionComp = this.mentionSuggestionList?.ValueSuggestion;
         const isKeyEventNotAllowed = peopleSearchOpen || valueSearchOpen;
-        const keyBindingFn =
-        isKeyEventNotAllowed  ? undefined : this.keyBindingFn;
-        const SuggestionListComp =  onValueMentionInput
-        ? ValueMentionSuggestionList({
-            onmousedown: this.onMouseDownMention,
-        })
-        : SuggestionList;
-        
+        const keyBindingFn = isKeyEventNotAllowed ? undefined : this.props.customKeyBinder ?? this.keyBindingFn;
+        const SuggestionListComp = onValueMentionInput
+            ? ValueMentionSuggestionList({
+                  onmousedown: this.onMouseDownMention,
+              })
+            : SuggestionList;
+
         const PopOverContainerMention = ValuePopOverProps ? ValuePopOverProps : ValuePopOverContainer;
         const valueSuggestionList = onValueMentionInput ? valueSuggestion : suggestions;
         const setFormat = this.setFormat;
@@ -841,8 +836,8 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
                         onOpenChange={this.onOpenValueChange}
                         suggestions={valueSuggestionList}
                         onSearchChange={this.onSearchChange}
-                        entryComponent={SuggestionListComp}                    
-                        popoverContainer={PopOverContainerMention}                        
+                        entryComponent={SuggestionListComp}
+                        popoverContainer={PopOverContainerMention}
                     />
                 )}
             </Fragment>
