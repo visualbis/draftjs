@@ -124,7 +124,6 @@ const inlineToolbarPlugin = createInlineToolbarPlugin({
     },
 });
 const { InlineToolbar } = inlineToolbarPlugin;
-inlineToolbarPlugin.
 const PeoplePopOverContainer = PopOverContainer({ width: 220 });
 const ValuePopOverContainer = PopOverContainer({ width: 120 });
 
