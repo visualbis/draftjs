@@ -754,7 +754,11 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         const MentionComp = this.mentionSuggestionList?.MentionSuggestions;
         const ValueMentionComp = this.mentionSuggestionList?.ValueSuggestion;
         const isKeyEventNotAllowed = peopleSearchOpen || valueSearchOpen;
-        const keyBindingFn = isKeyEventNotAllowed ? undefined : this.props.customKeyBinder ?? this.keyBindingFn;
+        const keyBindingFn = (isKeyEventNotAllowed
+            ? undefined
+            : this.props.customKeyBinder ?? this.keyBindingFn) as unknown as (
+            event: React.KeyboardEvent<Element>,
+        ) => string;
         const SuggestionListComp = onValueMentionInput
             ? ValueMentionSuggestionList({
                   onmousedown: this.onMouseDownMention,
