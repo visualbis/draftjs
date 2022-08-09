@@ -258,7 +258,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
                 });
             }
         }, 0);
-        this.observer = this.addCornerPositioningToInlineToolbar();
+        this.addCornerPositioningToInlineToolbar();
     }
 
     componentWillUnmount() {
@@ -705,31 +705,32 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
      */
     addCornerPositioningToInlineToolbar() {
         const inlineToolbar = document.querySelector('.inline-toolbar');
-        const observer = new MutationObserver((mutations) => {
-            mutations.forEach((mutation, index) => {
-                const element = mutation.target as HTMLElement;
-                if (mutation.type === 'attributes' && index === mutations.length - 1) {
-                    setTimeout(() => {
-                        const rect = element.getBoundingClientRect();
-                        const right = rect.x + rect.width;
-                        if (right > document.body.offsetWidth) {
-                            const offset = right - document.body.offsetWidth;
-                            const oldLeft = element.style.left;
-                            try {
-                                const oldLeftWithoutPx = Number(oldLeft.split('px')[0]);
-                                element.style.left = `${oldLeftWithoutPx - offset}px`;
-                            } catch (error) {
-                                console.log(error);
+        if (inlineToolbar) {
+            this.observer = new MutationObserver((mutations) => {
+                mutations.forEach((mutation, index) => {
+                    const element = mutation.target as HTMLElement;
+                    if (mutation.type === 'attributes' && index === mutations.length - 1) {
+                        setTimeout(() => {
+                            const rect = element.getBoundingClientRect();
+                            const right = rect.x + rect.width;
+                            if (right > document.body.offsetWidth) {
+                                const offset = right - document.body.offsetWidth;
+                                const oldLeft = element.style.left;
+                                try {
+                                    const oldLeftWithoutPx = Number(oldLeft.split('px')[0]);
+                                    element.style.left = `${oldLeftWithoutPx - offset}px`;
+                                } catch (error) {
+                                    console.log(error);
+                                }
                             }
-                        }
-                    }, 30);
-                }
+                        }, 30);
+                    }
+                });
             });
-        });
-        observer.observe(inlineToolbar, {
-            attributes: true,
-        });
-        return observer;
+            this.observer.observe(inlineToolbar, {
+                attributes: true,
+            });
+        }
     }
 
     blockStyleFn(block) {
