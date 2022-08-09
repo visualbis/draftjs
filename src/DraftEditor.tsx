@@ -262,7 +262,9 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
     }
 
     componentWillUnmount() {
-        this.observer.disconnect();
+        if (this.observer) {
+            this.observer.disconnect();
+        }
     }
 
     setFormat = (formatType: string, value: string) => {
