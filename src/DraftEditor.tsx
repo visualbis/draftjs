@@ -131,6 +131,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
     private mentionSuggestionList: any;
     public editorRef: React.RefObject<Editor>;
     private plugins: any[];
+    observer: MutationObserver;
     constructor(props: IDraftEditorProps) {
         super(props);
         const { initialContent, showMention, disableLinkify = false } = props;
@@ -257,6 +258,11 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
                 });
             }
         }, 0);
+        this.observer = this.addCornerPositioningToInlineToolbar();
+    }
+
+    componentWillUnmount() {
+        this.observer.disconnect();
     }
 
     setFormat = (formatType: string, value: string) => {
@@ -689,6 +695,40 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         const nextEditorState = RichUtils.toggleBlockType(editorState, newStyle);
         return nextEditorState;
     };
+
+    /**
+     * draft editor doesent automatically position the inline toolbar to left when there is no space in the right, it just cuts the element.
+     * this logic will modify the position left depeinding on whether space is available in the left
+     * Note - this only handle right side overflow which is enough for inforiver.
+     */
+    addCornerPositioningToInlineToolbar() {
+        const inlineToolbar = document.querySelector('.inline-toolbar');
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation, index) => {
+                const element = mutation.target as HTMLElement;
+                if (mutation.type === 'attributes' && index === mutations.length - 1) {
+                    setTimeout(() => {
+                        const rect = element.getBoundingClientRect();
+                        const right = rect.x + rect.width;
+                        if (right > document.body.offsetWidth) {
+                            const offset = right - document.body.offsetWidth;
+                            const oldLeft = element.style.left;
+                            try {
+                                const oldLeftWithoutPx = Number(oldLeft.split('px')[0]);
+                                element.style.left = `${oldLeftWithoutPx - offset}px`;
+                            } catch (error) {
+                                console.log(error);
+                            }
+                        }
+                    }, 30);
+                }
+            });
+        });
+        observer.observe(inlineToolbar, {
+            attributes: true,
+        });
+        return observer;
+    }
 
     blockStyleFn(block) {
         switch (block.getType()) {
