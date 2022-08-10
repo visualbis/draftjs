@@ -1,9 +1,13 @@
 import { default as Editor } from '@draft-js-plugins/editor';
 import { onDraftEditorCopy, onDraftEditorCut, handleDraftEditorPastedText } from 'draftjs-conductor';
-import createMentionPlugin, { MentionData } from '@draft-js-plugins/mention';
+import createMentionPlugin from '@draft-js-plugins/mention';
 import createLinkifyPlugin from 'draft-js-link-detection-plugin';
+import createInlineToolbarPlugin from '@draft-js-plugins/inline-toolbar';
 import '@draft-js-plugins/mention/lib/plugin.css';
+import '@draft-js-plugins/inline-toolbar/lib/plugin.css';
 import {
+    ContentState,
+    convertFromHTML,
     convertToRaw,
     DraftDecorator,
     EditorState,
@@ -12,6 +16,7 @@ import {
     Modifier,
     RichUtils,
     SelectionState,
+    DraftEditorCommand,
 } from 'draft-js';
 import 'draft-js/dist/Draft.css';
 import React, { Component, Fragment, ReactElement } from 'react';
@@ -27,21 +32,15 @@ import {
     IDraftElementFormats,
     resolveCustomStyleMap,
 } from './Service/draftEditor.service';
+import { Key } from './Service/Keycodes';
 import { CUSTOM_STYLE_MAP, formatKeys, MENTION_SUGGESTION_NAME } from './Service/UIconstants';
 import './Styles';
 
-interface IDraftEditorProps {
+export interface IDraftEditorProps {
     initialContent?: string;
     textAlignment?: string;
     onContentChange?: (content: string) => void;
-    onContentTextChange?: (content: {
-        formattedText: string;
-        value: string;
-        mentionList: string[];
-        rawValue?: string;
-        backgroundColor?: string;
-        justifyContent?: string;
-    }) => void;
+    onContentTextChange?: (content: IContentTextChangeProps) => void;
     onCurrentFormatChange?: (formats: IDraftElementFormats) => void;
     toolbarComponent?: ReactElement;
     toolbarOptions?: string[];
@@ -68,6 +67,18 @@ interface IDraftEditorProps {
     onValueMentionInput?: (value: string) => void;
     disableLinkify?: boolean;
     getMentionDataById?: (id: string) => { text: string; color: string; key: string; value: string };
+    inplaceToolbar?: boolean;
+    linkDecorator?: DraftDecorator;
+    customKeyBinder?: (e: KeyboardEvent) => DraftEditorCommand;
+}
+
+export interface IContentTextChangeProps {
+    formattedText: string;
+    value: string;
+    mentionList: string[];
+    rawValue?: string;
+    backgroundColor?: string;
+    justifyContent?: string;
 }
 export interface IElementFormats {
     fontFamily?: string;
@@ -100,37 +111,55 @@ interface IDraftEditorState {
     peopleSearchOpen?: boolean;
     suggestions?: any[];
     searchString?: string;
-    isMentionIncomplete?: boolean
+    isMentionIncomplete?: boolean;
 }
 
 const linkifyPlugin = createLinkifyPlugin();
-const PeoplePopOverContainer = PopOverContainer({width: 220});
-const ValuePopOverContainer = PopOverContainer({width: 120});
-
+const inlineToolbarPlugin = createInlineToolbarPlugin({
+    theme: {
+        toolbarStyles: {
+            toolbar: 'inline-toolbar',
+        },
+        buttonStyles: null,
+    },
+});
+const { InlineToolbar } = inlineToolbarPlugin;
+const PeoplePopOverContainer = PopOverContainer({ width: 220 });
+const ValuePopOverContainer = PopOverContainer({ width: 120 });
 
 class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
     private mentionSuggestionList: any;
     public editorRef: React.RefObject<Editor>;
-    private plugins: any;
+    private plugins: any[];
+    observer: MutationObserver;
     constructor(props: IDraftEditorProps) {
         super(props);
         const { initialContent, showMention, disableLinkify = false } = props;
         this.mentionSuggestionList = null;
         this.editorRef = React.createRef();
+        const blocksFromHTML = convertFromHTML(initialContent);
+        // Added to support converting anchor tags to to entity from HTML orelse it wont be treated as link entity
+        //ref:  https://github.com/facebook/draft-js/blob/main/examples/draft-0-10-0/link/link.html#L44
+        const state = ContentState.createFromBlockArray(blocksFromHTML.contentBlocks, blocksFromHTML.entityMap);
+
         this.state = {
-            editorState: EditorState.createWithContent(convertFromHTMLString(initialContent)),
+            editorState: EditorState.createWithContent(state),
             format: null,
             valueSearchOpen: false,
             peopleSearchOpen: false,
             suggestions: props.valueSuggestion,
             searchString: '',
-            isMentionIncomplete: false
+            isMentionIncomplete: false,
         };
 
         this.plugins = [];
+        if (this.props.inplaceToolbar) {
+            this.plugins.push(inlineToolbarPlugin);
+        }
         if (!disableLinkify) {
             this.plugins.push(linkifyPlugin);
         }
+
         if (props.decorators) {
             this.plugins.push({ decorators: props.decorators });
         }
@@ -229,6 +258,13 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
                 });
             }
         }, 0);
+        this.addCornerPositioningToInlineToolbar();
+    }
+
+    componentWillUnmount() {
+        if (this.observer) {
+            this.observer.disconnect();
+        }
     }
 
     setFormat = (formatType: string, value: string) => {
@@ -257,9 +293,29 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
             nextEditorState = formatText(nextEditorState, formatType, `${formatType}__${value}`);
         } else if (formatType === formatKeys.textAlign) {
             nextEditorState = RichUtils.toggleBlockType(editorState, value);
-        } else nextEditorState = RichUtils.toggleInlineStyle(nextEditorState, formatType.toUpperCase());
+        } else if (formatType === 'link') {
+            const contentState = nextEditorState.getCurrentContent();
+            const selectionState = nextEditorState.getSelection();
+            const contentStateWithEntity = contentState.createEntity('LINK', 'MUTABLE', { url: value, selectionState });
+            const entityKey = contentStateWithEntity.getLastCreatedEntityKey();
+
+            // Apply entity
+            nextEditorState = EditorState.set(nextEditorState, { currentContent: contentStateWithEntity });
+
+            // Apply selection
+            nextEditorState = RichUtils.toggleLink(nextEditorState, nextEditorState.getSelection(), entityKey);
+        } else {
+            nextEditorState = RichUtils.toggleInlineStyle(nextEditorState, formatType.toUpperCase());
+        }
         const format = getFormat(nextEditorState);
         this.updateData(nextEditorState, format);
+    };
+
+    removeLink = () => {
+        const selection = this.state.editorState.getSelection();
+        if (!selection.isCollapsed()) {
+            this.setState({ editorState: RichUtils.toggleLink(this.state.editorState, selection, null) });
+        }
     };
 
     onEditorStateChange = (editorStateUpdated: EditorState) => {
@@ -373,18 +429,18 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         const { showMention } = this.props;
         const mentionPlugin_PREFIX_ONE = showMention.people
             ? createMentionPlugin({
-                mentionTrigger: MENTION_SUGGESTION_NAME.PREFIX_ONE,
-                supportWhitespace: false,
-                entityMutability: 'IMMUTABLE',
-            })
+                  mentionTrigger: MENTION_SUGGESTION_NAME.PREFIX_ONE,
+                  supportWhitespace: false,
+                  entityMutability: 'IMMUTABLE',
+              })
             : { MentionSuggestions: null };
         const mentionPlugin_PREFIX_TWO = showMention.value
             ? createMentionPlugin({
-                mentionTrigger: [MENTION_SUGGESTION_NAME.PREFIX_TWO, "."],
-                supportWhitespace: true,
-                entityMutability: 'IMMUTABLE',
-                mentionRegExp: "."
-            })
+                  mentionTrigger: [MENTION_SUGGESTION_NAME.PREFIX_TWO, '.'],
+                  supportWhitespace: true,
+                  entityMutability: 'IMMUTABLE',
+                  mentionRegExp: '.',
+              })
             : { MentionSuggestions: null };
 
         // eslint-disable-next-line no-shadow
@@ -425,18 +481,18 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         const { isMentionIncomplete } = this.state;
         if (trigger === MENTION_SUGGESTION_NAME.PREFIX_ONE) {
             onMentionInput?.(value);
-        } else if (onValueMentionInput) {            
+        } else if (onValueMentionInput) {
             let inComplete = isMentionIncomplete;
             const matchArray = value.match(/  /);
             if (Array.isArray(matchArray) && matchArray.length > 0) {
                 if (!isMentionIncomplete) {
-                    inComplete = true
+                    inComplete = true;
                     setTimeout(() => {
-                        this.addColorToSelectedText(value.length + 1, "#ff0000")
-                    }, 200)
+                        this.addColorToSelectedText(value.length + 1, '#ff0000');
+                    }, 200);
                 }
             } else {
-                inComplete = false
+                inComplete = false;
             }
             this.setState({ searchString: value, isMentionIncomplete: inComplete });
             onValueMentionInput?.(value);
@@ -450,7 +506,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
     onTab = (e: React.KeyboardEvent<{}>) => {
         const { editorState, valueSearchOpen, searchString } = this.state;
         if (valueSearchOpen) {
-            if ((e.key === 'Tab')) {
+            if (e.key === 'Tab') {
                 const mention = JSON.parse(
                     (document.querySelector('.value-mention-item-focused') as HTMLElement).dataset.value,
                 );
@@ -473,7 +529,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
             return 'handled';
         }
         if (valueSearchOpen) {
-            if ((e.key === 'Enter')) {
+            if (e.key === 'Enter') {
                 const mention = JSON.parse(
                     (document.querySelector('.value-mention-item-focused') as HTMLElement).dataset.value,
                 );
@@ -488,14 +544,10 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         return 'not-handled';
     };
 
-    keyBindingFn = (event) => {
-        if (KeyBindingUtil.hasCommandModifier(event) && event.keyCode === 13) {
-            return 'submit';
+    keyBindingFn = (event): DraftEditorCommand => {
+        if ((KeyBindingUtil.hasCommandModifier(event) && event.keyCode === Key.Enter) || event.keyCode === Key.Escape) {
+            return 'submit' as DraftEditorCommand;
         }
-        if (event.keyCode === 27) {
-            return 'submit';
-        }
-
         return getDefaultKeyBinding(event);
     };
 
@@ -529,8 +581,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
             // after adding selected text, reset focus ref
             this.editorRef.current.focus();
         }, 200);
-
-    }
+    };
 
     insertTextAtCursor = (textToInsert: string, offset: number = 0, textColor?: string, replaceSelection = false) => {
         const { editorState } = this.state;
@@ -647,6 +698,41 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         return nextEditorState;
     };
 
+    /**
+     * draft editor doesent automatically position the inline toolbar to left when there is no space in the right, it just cuts the element.
+     * this logic will modify the position left depeinding on whether space is available in the left
+     * Note - this only handle right side overflow which is enough for inforiver.
+     */
+    addCornerPositioningToInlineToolbar() {
+        const inlineToolbar = document.querySelector('.inline-toolbar');
+        if (inlineToolbar) {
+            this.observer = new MutationObserver((mutations) => {
+                mutations.forEach((mutation, index) => {
+                    const element = mutation.target as HTMLElement;
+                    if (mutation.type === 'attributes' && index === mutations.length - 1) {
+                        setTimeout(() => {
+                            const rect = element.getBoundingClientRect();
+                            const right = rect.x + rect.width;
+                            if (right > document.body.offsetWidth) {
+                                const offset = right - document.body.offsetWidth;
+                                const oldLeft = element.style.left;
+                                try {
+                                    const oldLeftWithoutPx = Number(oldLeft.split('px')[0]);
+                                    element.style.left = `${oldLeftWithoutPx - offset}px`;
+                                } catch (error) {
+                                    console.log(error);
+                                }
+                            }
+                        }, 30);
+                    }
+                });
+            });
+            this.observer.observe(inlineToolbar, {
+                attributes: true,
+            });
+        }
+    }
+
     blockStyleFn(block) {
         switch (block.getType()) {
             case 'blockquote':
@@ -685,14 +771,12 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         }
         const isParent = mention.parent && mention.parent.length > 0;
         const string = `${(isParent ? mention.parent : []).join('.')}${isParent ? '.' : ''}${mention.label}.`;
-        this.insertTextAtCursor(string, length, "#333");
+        this.insertTextAtCursor(string, length, '#333');
         setTimeout(() => {
             this.setState({ valueSearchOpen: true, searchString: searchValue });
         }, 200);
         onValueMentionInput === null || onValueMentionInput === void 0 ? void 0 : onValueMentionInput(string);
     };
-
-    
 
     render() {
         const {
@@ -702,6 +786,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
             isMentionLoading,
             placeholder,
             readOnly,
+            inplaceToolbar,
             onBlur,
             onFocus,
             valueSuggestion,
@@ -712,22 +797,31 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         const MentionComp = this.mentionSuggestionList?.MentionSuggestions;
         const ValueMentionComp = this.mentionSuggestionList?.ValueSuggestion;
         const isKeyEventNotAllowed = peopleSearchOpen || valueSearchOpen;
-        const keyBindingFn =
-        isKeyEventNotAllowed  ? undefined : this.keyBindingFn;
-        const SuggestionListComp =  onValueMentionInput
-        ? ValueMentionSuggestionList({
-            onmousedown: this.onMouseDownMention,
-        })
-        : SuggestionList;
-        
+        const keyBindingFn = (isKeyEventNotAllowed
+            ? undefined
+            : this.props.customKeyBinder ?? this.keyBindingFn) as unknown as (
+            event: React.KeyboardEvent<Element>,
+        ) => string;
+        const SuggestionListComp = onValueMentionInput
+            ? ValueMentionSuggestionList({
+                  onmousedown: this.onMouseDownMention,
+              })
+            : SuggestionList;
+
         const PopOverContainerMention = ValuePopOverProps ? ValuePopOverProps : ValuePopOverContainer;
         const valueSuggestionList = onValueMentionInput ? valueSuggestion : suggestions;
+        const setFormat = this.setFormat;
+        // decorator for link only works when its passed from `decorator` prop.
+        const decorators = this.props.linkDecorator ? [this.props.linkDecorator] : [];
+
         return (
             <Fragment>
-                {toolbarComponent &&
+                {!inplaceToolbar &&
+                    toolbarComponent &&
                     React.cloneElement(toolbarComponent, {
                         currentFormat: format,
                         setFormat: this.setFormat,
+                        removeLink: this.removeLink,
                     })}
                 <Editor
                     ref={this.editorRef}
@@ -736,6 +830,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
                     stripPastedStyles
                     editorState={editorState}
                     placeholder={placeholder}
+                    decorators={decorators}
                     onChange={this.onEditorStateChange}
                     textAlignment={textAlignment as any}
                     handleKeyCommand={this.handleKeyCommand}
@@ -752,6 +847,21 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
                     handlePastedText={this.handlePastedText}
                     blockStyleFn={this.blockStyleFn}
                 />
+                {toolbarComponent && inplaceToolbar && (
+                    <InlineToolbar>
+                        {(externalProps) => (
+                            <>
+                                {React.cloneElement(toolbarComponent, {
+                                    currentFormat: format,
+                                    setFormat,
+                                    onOverrideContent: externalProps.onOverrideContent,
+                                    externalProps,
+                                    removeLink: this.removeLink,
+                                })}
+                            </>
+                        )}
+                    </InlineToolbar>
+                )}
                 <div className="list_container">
                     {peopleSearchOpen && !isMentionLoading && peopleSuggestion?.length === 0 && (
                         <ul style={{ padding: '0 10px' }}>No Data found</ul>
@@ -773,8 +883,8 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
                         onOpenChange={this.onOpenValueChange}
                         suggestions={valueSuggestionList}
                         onSearchChange={this.onSearchChange}
-                        entryComponent={SuggestionListComp}                    
-                        popoverContainer={PopOverContainerMention}                        
+                        entryComponent={SuggestionListComp}
+                        popoverContainer={PopOverContainerMention}
                     />
                 )}
             </Fragment>

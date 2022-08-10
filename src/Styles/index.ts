@@ -3,6 +3,7 @@ import '../css/DraftEditor.css';
 import '../css/Icon.css';
 import '../css/Mention.css';
 import '../css/ToolbarSelect.css';
+import '../css/InlineToolbar.css';
 
 //To Run Local
 // import './ToolbarButton.less';
