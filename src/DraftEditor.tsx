@@ -137,13 +137,15 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         const { initialContent, showMention, disableLinkify = false } = props;
         this.mentionSuggestionList = null;
         this.editorRef = React.createRef();
-        const blocksFromHTML = convertFromHTML(initialContent);
+
+        //TO DO: Fix this for Link
+        // const blocksFromHTML = convertFromHTML(initialContent);
         // Added to support converting anchor tags to to entity from HTML orelse it wont be treated as link entity
         //ref:  https://github.com/facebook/draft-js/blob/main/examples/draft-0-10-0/link/link.html#L44
-        const state = ContentState.createFromBlockArray(blocksFromHTML.contentBlocks, blocksFromHTML.entityMap);
+        // const state = ContentState.createFromBlockArray(blocksFromHTML.contentBlocks, blocksFromHTML.entityMap);
 
         this.state = {
-            editorState: EditorState.createWithContent(state),
+            editorState: EditorState.createWithContent(convertFromHTMLString(initialContent)),
             format: null,
             valueSearchOpen: false,
             peopleSearchOpen: false,
