@@ -189,7 +189,7 @@ const convertFromHTMLString = (html: string): Draft.ContentState => {
                 return createEntity('#mention', 'IMMUTABLE', { mention: { name: data.name, ...data } });
             } else if (nodeName === 'a') {
                 const data = JSON.parse(node.dataset.value);
-                return createEntity('link', 'MUTABLE', { ...data });
+                return createEntity('LINK', 'MUTABLE', { ...data });
             }
         },
     })(html);

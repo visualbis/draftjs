@@ -71,7 +71,6 @@ export interface IDraftEditorProps {
     inplaceToolbar?: boolean;
     linkDecorator?: DraftDecorator;
     customKeyBinder?: (e: KeyboardEvent) => DraftEditorCommand;
-    useBlockConversion?: boolean;
 }
 
 export interface IContentTextChangeProps {
@@ -136,12 +135,12 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
     observer: MutationObserver;
     constructor(props: IDraftEditorProps) {
         super(props);
-        const { showMention, disableLinkify = false } = props;
+        const { initialContent, showMention, disableLinkify = false } = props;
         this.mentionSuggestionList = null;
         this.editorRef = React.createRef();
 
         this.state = {
-            editorState: this.getInitialState(),
+            editorState: EditorState.createWithContent(convertFromHTMLString(initialContent)),
             format: null,
             valueSearchOpen: false,
             peopleSearchOpen: false,
@@ -164,18 +163,6 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         if (showMention && (showMention.people || showMention.value)) {
             this.MentionComponents();
         }
-    }
-
-    getInitialState() {
-        const { initialContent, useBlockConversion } = this.props;
-        if (useBlockConversion) {
-            const blocksFromHTML = convertFromHTML(initialContent);
-            // Added to support converting anchor tags to to entity from HTML orelse it wont be treated as link entity
-            //ref:  https://github.com/facebook/draft-js/blob/main/examples/draft-0-10-0/link/link.html#L44
-            const state = ContentState.createFromBlockArray(blocksFromHTML.contentBlocks, blocksFromHTML.entityMap);
-            return EditorState.createWithContent(state);
-        }
-        return EditorState.createWithContent(convertFromHTMLString(initialContent));
     }
 
     getCurrentFormat() {
