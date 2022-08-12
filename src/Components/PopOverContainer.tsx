@@ -7,6 +7,8 @@ const PopOverContainer =
         const boundingRect = props.store.getReferenceElement()?.getBoundingClientRect();
         const mentionWidth = width ?? 223;
         const clientWidth = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
+        const clientHeight = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
+
         if (!boundingRect) {
             return null;
         }
@@ -21,7 +23,7 @@ const PopOverContainer =
                       clientWidth - boundingRect.left < mentionWidth
                           ? boundingRect.left - mentionWidth
                           : boundingRect.left + 20,
-                  top: boundingRect.top + 15,
+                     top: clientHeight - boundingRect.top < boundingRect.height ? boundingRect.top - boundingRect.height : boundingRect.top + 20,
                   backgroundColor: '#fff',
                   zIndex: 1000,
                   boxShadow: '0px 4px 4px rgb(0 0 0 / 25%)',
