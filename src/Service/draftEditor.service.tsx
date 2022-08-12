@@ -1,5 +1,5 @@
 import { convertFromHTML, convertToHTML } from 'draft-convert';
-import { convertToRaw, DraftInlineStyle, EditorState, Modifier, RichUtils } from 'draft-js';
+import { convertToRaw, DraftInlineStyle, EditorState, Modifier, RichUtils, SelectionState } from 'draft-js';
 import draftToHtml from 'draftjs-to-html';
 import React from 'react';
 import { formatKeys, mentionAnchorStyle, styleValues } from './UIconstants';
@@ -189,7 +189,6 @@ const convertFromHTMLString = (html: string): Draft.ContentState => {
                 return createEntity('#mention', 'IMMUTABLE', { mention: { name: data.name, ...data } });
             } else if (nodeName === 'a') {
                 const data = JSON.parse(node.dataset.value);
-
                 return createEntity('link', 'MUTABLE', { ...data });
             }
         },
@@ -304,7 +303,26 @@ const getLinkState = (editorState: EditorState): IDraftElementFormats['link'] =>
     return null;
 };
 
+const selectAll = (editorState: EditorState) => {
+    const currentContent = editorState.getCurrentContent();
+    const firstBlock = currentContent.getBlockMap().first();
+    const lastBlock = currentContent.getBlockMap().last();
+    const firstBlockKey = firstBlock.getKey();
+    const lastBlockKey = lastBlock.getKey();
+    const lengthOfLastBlock = lastBlock.getLength();
+
+    const selection = new SelectionState({
+        anchorKey: firstBlockKey,
+        anchorOffset: 0,
+        focusKey: lastBlockKey,
+        focusOffset: lengthOfLastBlock,
+    });
+
+    return EditorState.acceptSelection(editorState, selection);
+};
+
 export {
+    selectAll,
     convertFromHTMLString,
     resolveCustomStyleMap,
     formatText,

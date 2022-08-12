@@ -31,6 +31,7 @@ import {
     getFormat,
     IDraftElementFormats,
     resolveCustomStyleMap,
+    selectAll,
 } from './Service/draftEditor.service';
 import { Key } from './Service/Keycodes';
 import { CUSTOM_STYLE_MAP, formatKeys, MENTION_SUGGESTION_NAME } from './Service/UIconstants';
@@ -70,6 +71,7 @@ export interface IDraftEditorProps {
     inplaceToolbar?: boolean;
     linkDecorator?: DraftDecorator;
     customKeyBinder?: (e: KeyboardEvent) => DraftEditorCommand;
+    useBlockConversion?: boolean;
 }
 
 export interface IContentTextChangeProps {
@@ -411,26 +413,11 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
     };
 
     selectAll = () => {
-        const { editorState } = this.state;
-        const currentContent = editorState.getCurrentContent();
-        const firstBlock = currentContent.getBlockMap().first();
-        const lastBlock = currentContent.getBlockMap().last();
-        const firstBlockKey = firstBlock.getKey();
-        const lastBlockKey = lastBlock.getKey();
-        const lengthOfLastBlock = lastBlock.getLength();
-
-        const selection = new SelectionState({
-            anchorKey: firstBlockKey,
-            anchorOffset: 0,
-            focusKey: lastBlockKey,
-            focusOffset: lengthOfLastBlock,
-        });
-
-        const newEditorState = EditorState.acceptSelection(editorState, selection);
+        const editorState = selectAll(this.state.editorState);
         this.setState({
-            editorState: newEditorState,
+            editorState,
         });
-        return newEditorState;
+        return editorState;
     };
 
     MentionComponents = () => {
