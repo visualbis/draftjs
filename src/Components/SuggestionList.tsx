@@ -43,7 +43,7 @@ export default class SuggestionList extends React.Component<EntryComponentProps>
                         <div className={`${theme?.mentionSuggestionsEntryTitle} ${'list-title'}`}>{mention.label}</div>
 
                         {mention.email && (
-                            <div className={theme?.mentionSuggestionsEntryText} style={{ marginLeft: 0 }}>
+                            <div className={`list-email ${theme?.mentionSuggestionsEntryText}`} style={{ marginLeft: 0 }}>
                                 {mention.email}
                             </div>
                         )}
