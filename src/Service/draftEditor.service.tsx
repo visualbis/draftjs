@@ -183,10 +183,12 @@ const convertFromHTMLString = (html: string): Draft.ContentState => {
         htmlToEntity: (nodeName, node, createEntity) => {
             if (nodeName === 'span' && node.classList.contains('mention')) {
                 const data = JSON.parse(node.dataset.value);
+                
                 return createEntity('mention', 'IMMUTABLE', { mention: { name: data.name, ...data } });
             } else if (nodeName === 'span' && node.classList.contains('hash-mention')) {
-                const data = JSON.parse(node.dataset.value);
-                return createEntity('#mention', 'IMMUTABLE', { mention: { name: data.name, ...data } });
+                const value = JSON.parse(node.dataset.value);
+                const id = node.dataset.id;
+                return createEntity('#mention', 'IMMUTABLE', { mention: { name: value.name, ...value }, id });
             } else if (nodeName === 'a') {
                 const data = JSON.parse(node.dataset.value);
                 return createEntity('LINK', 'MUTABLE', { ...data });
@@ -251,6 +253,7 @@ const convertToHTMLString = (
                     </span>
                 );
             } else if (entity.type === '#mention') {
+                const key = entity.data.mention?.key.match(/#\[(.*?)\]/g) ? entity.data.mention?.key : `#[${entity.data.mention?.key}]`; // Migration changes
                 return (
                     <span
                         className="hash-mention"
@@ -258,13 +261,14 @@ const convertToHTMLString = (
                         style={{
                             ...mentionAnchorStyle,
                         }}
+                        data-id={entity.data.id}
                         data-value={JSON.stringify({
                             ...entity.data.mention,
                             image: '',
                             avatar: '',
                         })}
                     >
-                        {dynamicMention ? `#[${entity.data.mention?.key}]` : originalText}
+                        {dynamicMention ? key : originalText}
                     </span>
                 );
             } else if (entity.type === 'link' || entity.type === 'LINK') {
