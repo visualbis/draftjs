@@ -324,7 +324,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
     removeLink = () => {
         const selection = this.state.editorState.getSelection();
         if (!selection.isCollapsed()) {
-            this.setState({ editorState: RichUtils.toggleLink(this.state.editorState, selection, null) });
+            this.updateData(RichUtils.toggleLink(this.state.editorState, selection, null));
         }
     };
 
