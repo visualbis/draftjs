@@ -126,8 +126,8 @@ const inlineToolbarPlugin = createInlineToolbarPlugin({
     },
 });
 const { InlineToolbar } = inlineToolbarPlugin;
-const PeoplePopOverContainer = PopOverContainer({ width: 220 });
-const ValuePopOverContainer = PopOverContainer({ width: 120 });
+const PeoplePopOverContainer = PopOverContainer({ width: 220,isPeopleMention: true });
+const ValuePopOverContainer = PopOverContainer({ width: 120, isPeopleMention : false });
 
 class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
     private mentionSuggestionList: any;
