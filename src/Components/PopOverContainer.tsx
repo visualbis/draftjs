@@ -8,7 +8,8 @@ const PopOverContainer =
         const mentionWidth = width ?? 223;
         const clientWidth = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
         const clientHeight = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
-        const height  = Math.min(160, props.children.length * 26)
+        const  childHeight = isPeopleMention ? 56.6 : 26 ;
+        const height  = Math.min(160, props.children.length * childHeight)
         if (!boundingRect) {
             return null;
         }
