@@ -643,8 +643,12 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
 
         const stateWithEntity = editorState.getCurrentContent().createEntity(mentionType, 'IMMUTABLE', {
             mention: value,
+            id: Date.now()
         });
         const entityKey = stateWithEntity.getLastCreatedEntityKey();
+        stateWithEntity.mergeEntityData(entityKey,
+            {["id"]: entityKey }
+          )
         let currentSelection = editorState.getSelection();
         if (!replaceSelection) {
             const nextOffSet = currentSelection.getFocusOffset();
