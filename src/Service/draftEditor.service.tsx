@@ -26,6 +26,14 @@ export interface IDraftElementFormats {
     };
 }
 
+const  randomString = () => {
+    const length = 32;
+    const chars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-"
+    let result = '';
+    for (let i = length; i > 0; --i) result += chars[Math.floor(Math.random() * chars.length)];
+    return result;
+}
+
 const resolveCustomStyleMap = (style: DraftInlineStyle) => {
     const colObj = {} as React.CSSProperties;
     style.forEach((styleKey) => {
@@ -183,10 +191,12 @@ const convertFromHTMLString = (html: string): Draft.ContentState => {
         htmlToEntity: (nodeName, node, createEntity) => {
             if (nodeName === 'span' && node.classList.contains('mention')) {
                 const data = JSON.parse(node.dataset.value);
-                return createEntity('mention', 'IMMUTABLE', { mention: { name: data.name, ...data } });
+                const id = node.dataset.id;
+                return createEntity('mention', 'IMMUTABLE', { mention: { name: data.name, ...data }, id });
             } else if (nodeName === 'span' && node.classList.contains('hash-mention')) {
                 const data = JSON.parse(node.dataset.value);
-                return createEntity('#mention', 'IMMUTABLE', { mention: { name: data.name, ...data } });
+                const id = node.dataset.id;
+                return createEntity('#mention', 'IMMUTABLE', { mention: { name: data.name, ...data }, id });
             } else if (nodeName === 'a') {
                 const data = JSON.parse(node.dataset.value);
                 return createEntity('LINK', 'MUTABLE', { ...data });
@@ -236,11 +246,13 @@ const convertToHTMLString = (
             }
         },
         entityToHTML: (entity, originalText) => {
-            if (entity.type === 'mention') {
+            if (entity.type === 'mention') {                
+                const id = entity.data.id  ? entity.data.id :  randomString();
                 return (
                     <span
                         className="mention"
                         style={{ ...mentionAnchorStyle, color: isColorRequired ? '#0078d4' : null }}
+                        data-id={id}
                         data-value={JSON.stringify({
                             ...entity.data.mention,
                             image: '',
@@ -258,6 +270,7 @@ const convertToHTMLString = (
                         style={{
                             ...mentionAnchorStyle,
                         }}
+                        data-id={entity.data.id}
                         data-value={JSON.stringify({
                             ...entity.data.mention,
                             image: '',
