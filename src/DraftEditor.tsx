@@ -67,11 +67,12 @@ export interface IDraftEditorProps {
     decorators?: DraftDecorator[];
     onValueMentionInput?: (value: string) => void;
     disableLinkify?: boolean;
-    getMentionDataById?: (id: string) => { text: string; color: string; key: string; value: string };
+    getMentionDataById?: (id: string) => {title: string, text: string; color: string; key: string; value: string };
     inplaceToolbar?: boolean;
     linkDecorator?: DraftDecorator;
     customKeyBinder?: (e: KeyboardEvent) => DraftEditorCommand;
     useBlockConversion?: boolean;
+    parsedValueMentionRequired?:boolean;
 }
 
 export interface IContentTextChangeProps {
@@ -334,6 +335,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
     };
 
     updateData = (editorStateUpdated: EditorState, customFormat?: any) => {
+        const { parsedValueMentionRequired } = this.props;
         const selection = editorStateUpdated.getSelection();
         if (this.props.entitySelectionAsWhole && selection?.getHasFocus()) {
             const content = editorStateUpdated.getCurrentContent();
@@ -369,13 +371,13 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         const rawData = convertToRaw(editorStateUpdated.getCurrentContent());
         const mentionList = [];
         Object.keys(rawData.entityMap).forEach((key) => {
-            if (rawData.entityMap[key].type === '#mention') {
-                return;
+            if (rawData.entityMap[key].type === 'mention') {               
+                mentionList.push({
+                    emailAddress: rawData.entityMap[key]?.data?.mention?.value,
+                    fullName: rawData.entityMap[key]?.data?.mention?.name,
+                    id: rawData.entityMap[key]?.data?.mention?.id,
+                });
             }
-            mentionList.push({
-                emailAddress: rawData.entityMap[key]?.data?.mention?.value,
-                fullName: rawData.entityMap[key]?.data?.mention?.name,
-            });
         });
         const value = rawData.blocks.map((block) => (!block.text.trim() && '\n') || block.text).join('\n');
         const htmlText = convertToHTMLString(
@@ -640,7 +642,6 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         replaceSelection = false,
     ) => {
         const { editorState } = this.state;
-
         const stateWithEntity = editorState.getCurrentContent().createEntity(mentionType, 'IMMUTABLE', {
             mention: value,
             id: Date.now()
@@ -748,7 +749,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
     }
 
     onMouseDownMention = (mention, searchValue) => {
-        const { getMentionDataById, onValueMentionInput } = this.props;
+        const { getMentionDataById, onValueMentionInput, parsedValueMentionRequired } = this.props;
         let length = searchValue.length;
         if (mention.parent.length > 0) {
             const searchArray = searchValue.split('.');
@@ -763,7 +764,8 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         }
         if (!mention.hasLeaf) {
             const data = getMentionDataById(mention.id);
-            this.insertEntityAtCursor(data, data.value, '#mention', length + 1);
+            
+            this.insertEntityAtCursor(data, parsedValueMentionRequired ? data.value: data.title, '#mention', length + 1);
             onValueMentionInput('');
             this.setState({ valueSearchOpen: false, searchString: '' });
             return;

@@ -263,6 +263,7 @@ const convertToHTMLString = (
                     </span>
                 );
             } else if (entity.type === '#mention') {
+                const key = entity.data.mention?.key.match(/#\[(.*?)\]/g) ? entity.data.mention?.key : `#[${entity.data.mention?.key}]`; // Migration changes                
                 return (
                     <span
                         className="hash-mention"
@@ -277,7 +278,7 @@ const convertToHTMLString = (
                             avatar: '',
                         })}
                     >
-                        {dynamicMention ? `#[${entity.data.mention?.key}]` : originalText}
+                        {dynamicMention ? key : originalText}
                     </span>
                 );
             } else if (entity.type === 'link' || entity.type === 'LINK') {
