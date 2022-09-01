@@ -67,7 +67,7 @@ export interface IDraftEditorProps {
     decorators?: DraftDecorator[];
     onValueMentionInput?: (value: string) => void;
     disableLinkify?: boolean;
-    getMentionDataById?: (id: string) => { text: string; color: string; key: string; value: string };
+    getMentionDataById?: (id: string) => {title: string, text: string; color: string; key: string; value: string };
     inplaceToolbar?: boolean;
     linkDecorator?: DraftDecorator;
     customKeyBinder?: (e: KeyboardEvent) => DraftEditorCommand;
@@ -127,8 +127,8 @@ const inlineToolbarPlugin = createInlineToolbarPlugin({
     },
 });
 const { InlineToolbar } = inlineToolbarPlugin;
-const PeoplePopOverContainer = PopOverContainer({ width: 220 });
-const ValuePopOverContainer = PopOverContainer({ width: 120 });
+const PeoplePopOverContainer = PopOverContainer({ width: 220,isPeopleMention: true });
+const ValuePopOverContainer = PopOverContainer({ width: 120, isPeopleMention : false });
 
 class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
     private mentionSuggestionList: any;
@@ -325,7 +325,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
     removeLink = () => {
         const selection = this.state.editorState.getSelection();
         if (!selection.isCollapsed()) {
-            this.setState({ editorState: RichUtils.toggleLink(this.state.editorState, selection, null) });
+            this.updateData(RichUtils.toggleLink(this.state.editorState, selection, null));
         }
     };
 
@@ -375,6 +375,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
                 mentionList.push({
                     emailAddress: rawData.entityMap[key]?.data?.mention?.value,
                     fullName: rawData.entityMap[key]?.data?.mention?.name,
+                    id: rawData.entityMap[key]?.data?.mention?.id,
                 });
             }
         });
@@ -764,7 +765,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         if (!mention.hasLeaf) {
             const data = getMentionDataById(mention.id);
             
-            this.insertEntityAtCursor(data, parsedValueMentionRequired ? data.value: data.key, '#mention', length + 1);
+            this.insertEntityAtCursor(data, parsedValueMentionRequired ? data.value: data.title, '#mention', length + 1);
             onValueMentionInput('');
             this.setState({ valueSearchOpen: false, searchString: '' });
             return;
