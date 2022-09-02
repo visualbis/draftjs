@@ -117,6 +117,7 @@ interface IDraftEditorState {
 }
 
 const linkifyPlugin = createLinkifyPlugin();
+
 const inlineToolbarPlugin = createInlineToolbarPlugin({
     theme: {
         toolbarStyles: {
@@ -126,8 +127,8 @@ const inlineToolbarPlugin = createInlineToolbarPlugin({
     },
 });
 const { InlineToolbar } = inlineToolbarPlugin;
-const PeoplePopOverContainer = PopOverContainer({ width: 220,isPeopleMention: true });
-const ValuePopOverContainer = PopOverContainer({ width: 120, isPeopleMention : false });
+const PeoplePopOverContainer = PopOverContainer({ width: 220, isPeopleMention: true });
+const ValuePopOverContainer = PopOverContainer({ width: 120, isPeopleMention: false });
 
 class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
     private mentionSuggestionList: any;
@@ -305,8 +306,15 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
             nextEditorState = RichUtils.toggleBlockType(editorState, value);
         } else if (formatType === 'link') {
             const contentState = nextEditorState.getCurrentContent();
-            const selectionState = nextEditorState.getSelection();
-            const contentStateWithEntity = contentState.createEntity('LINK', 'MUTABLE', { url: value, selectionState });
+            const contentStateWithEntity = contentState.createEntity('LINK', 'MUTABLE', {
+                url: value,
+                /**
+                 * "explicit" property is required to fix https://github.com/fedorovsky/draft-js-link-detection-plugin/issues/3
+                 * ref - https://github.com/fedorovsky/draft-js-link-detection-plugin/blob/master/src/plugin/draft-js-link-detection-plugin.tsx#L188
+                 *  VBI-4951
+                 */
+                explicit: true,
+            });
             const entityKey = contentStateWithEntity.getLastCreatedEntityKey();
 
             // Apply entity
@@ -643,12 +651,10 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
 
         const stateWithEntity = editorState.getCurrentContent().createEntity(mentionType, 'IMMUTABLE', {
             mention: value,
-            id: Date.now()
+            id: Date.now(),
         });
         const entityKey = stateWithEntity.getLastCreatedEntityKey();
-        stateWithEntity.mergeEntityData(entityKey,
-            {["id"]: entityKey }
-          )
+        stateWithEntity.mergeEntityData(entityKey, { ['id']: entityKey });
         let currentSelection = editorState.getSelection();
         if (!replaceSelection) {
             const nextOffSet = currentSelection.getFocusOffset();
