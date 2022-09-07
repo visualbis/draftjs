@@ -2,8 +2,12 @@ import { default as Editor } from '@draft-js-plugins/editor';
 import { onDraftEditorCopy, onDraftEditorCut, handleDraftEditorPastedText } from 'draftjs-conductor';
 import createMentionPlugin from '@draft-js-plugins/mention';
 import createLinkifyPlugin from 'draft-js-link-detection-plugin';
+import createInlineToolbarPlugin from '@draft-js-plugins/inline-toolbar';
 import '@draft-js-plugins/mention/lib/plugin.css';
+import '@draft-js-plugins/inline-toolbar/lib/plugin.css';
 import {
+    ContentState,
+    convertFromHTML,
     convertToRaw,
     DraftDecorator,
     EditorState,
@@ -12,11 +16,13 @@ import {
     Modifier,
     RichUtils,
     SelectionState,
+    DraftEditorCommand,
 } from 'draft-js';
 import 'draft-js/dist/Draft.css';
 import React, { Component, Fragment, ReactElement } from 'react';
 import PopOverContainer from './Components/PopOverContainer';
 import SuggestionList from './Components/SuggestionList';
+import ValueMentionSuggestionList from './Components/ValueMentionSuggestionList';
 import {
     convertFromHTMLString,
     convertToHTMLString,
@@ -25,22 +31,17 @@ import {
     getFormat,
     IDraftElementFormats,
     resolveCustomStyleMap,
+    selectAll,
 } from './Service/draftEditor.service';
+import { Key } from './Service/Keycodes';
 import { CUSTOM_STYLE_MAP, formatKeys, MENTION_SUGGESTION_NAME } from './Service/UIconstants';
 import './Styles';
 
-interface IDraftEditorProps {
+export interface IDraftEditorProps {
     initialContent?: string;
     textAlignment?: string;
     onContentChange?: (content: string) => void;
-    onContentTextChange?: (content: {
-        formattedText: string;
-        value: string;
-        mentionList: string[];
-        rawValue?: string;
-        backgroundColor?: string;
-        justifyContent?: string;
-    }) => void;
+    onContentTextChange?: (content: IContentTextChangeProps) => void;
     onCurrentFormatChange?: (formats: IDraftElementFormats) => void;
     toolbarComponent?: ReactElement;
     toolbarOptions?: string[];
@@ -64,6 +65,23 @@ interface IDraftEditorProps {
     ValuePopOverProps?: (props) => JSX.Element;
     updateFormat?: (format: IElementFormats) => void;
     decorators?: DraftDecorator[];
+    onValueMentionInput?: (value: string) => void;
+    disableLinkify?: boolean;
+    getMentionDataById?: (id: string) => {title: string, text: string; color: string; key: string; value: string };
+    inplaceToolbar?: boolean;
+    linkDecorator?: DraftDecorator;
+    customKeyBinder?: (e: KeyboardEvent) => DraftEditorCommand;
+    useBlockConversion?: boolean;
+    parsedValueMentionRequired?:boolean;
+}
+
+export interface IContentTextChangeProps {
+    formattedText: string;
+    value: string;
+    mentionList: string[];
+    rawValue?: string;
+    backgroundColor?: string;
+    justifyContent?: string;
 }
 export interface IElementFormats {
     fontFamily?: string;
@@ -95,33 +113,71 @@ interface IDraftEditorState {
     valueSearchOpen?: boolean;
     peopleSearchOpen?: boolean;
     suggestions?: any[];
+    searchString?: string;
+    isMentionIncomplete?: boolean;
 }
 
 const linkifyPlugin = createLinkifyPlugin();
 
+const inlineToolbarPlugin = createInlineToolbarPlugin({
+    theme: {
+        toolbarStyles: {
+            toolbar: 'inline-toolbar',
+        },
+        buttonStyles: null,
+    },
+});
+const { InlineToolbar } = inlineToolbarPlugin;
+const PeoplePopOverContainer = PopOverContainer({ width: 220, isPeopleMention: true });
+const ValuePopOverContainer = PopOverContainer({ width: 120, isPeopleMention: false });
+
 class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
     private mentionSuggestionList: any;
     public editorRef: React.RefObject<Editor>;
-    private plugins: any;
+    private plugins: any[];
+    observer: MutationObserver;
     constructor(props: IDraftEditorProps) {
         super(props);
-        const { initialContent, showMention } = props;
+        const { showMention, disableLinkify = false } = props;
         this.mentionSuggestionList = null;
         this.editorRef = React.createRef();
+
         this.state = {
-            editorState: EditorState.createWithContent(convertFromHTMLString(initialContent)),
+            editorState: this.getInitialState(),
             format: null,
             valueSearchOpen: false,
             peopleSearchOpen: false,
             suggestions: props.valueSuggestion,
-        };
-        this.plugins = [linkifyPlugin];
+            searchString: '',
+            isMentionIncomplete: false,
+        }; 
+
+        this.plugins = [];
+        if (this.props.inplaceToolbar) {
+            this.plugins.push(inlineToolbarPlugin);
+        }
+        if (!disableLinkify) {
+            this.plugins.push(linkifyPlugin);
+        }
+ 
         if (props.decorators) {
             this.plugins.push({ decorators: props.decorators });
         }
         if (showMention && (showMention.people || showMention.value)) {
             this.MentionComponents();
         }
+    }
+
+    getInitialState() {
+        const { initialContent, useBlockConversion } = this.props;
+        if (useBlockConversion) {
+            const blocksFromHTML = convertFromHTML(initialContent);
+            // Added to support converting anchor tags to to entity from HTML orelse it wont be treated as link entity
+            //ref:  https://github.com/facebook/draft-js/blob/main/examples/draft-0-10-0/link/link.html#L44
+            const state = ContentState.createFromBlockArray(blocksFromHTML.contentBlocks, blocksFromHTML.entityMap);
+            return EditorState.createWithContent(state);
+        }
+        return EditorState.createWithContent(convertFromHTMLString(initialContent));
     }
 
     getCurrentFormat() {
@@ -142,7 +198,9 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
 
     UNSAFE_componentWillReceiveProps(newProps) {
         if (newProps.initialContent === '') {
-            this.setState({ editorState: EditorState.createWithContent(convertFromHTMLString('')) });
+            this.setState({
+                editorState: EditorState.createWithContent(convertFromHTMLString('')),
+            });
         }
     }
 
@@ -212,6 +270,13 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
                 });
             }
         }, 0);
+        this.addCornerPositioningToInlineToolbar();
+    }
+
+    componentWillUnmount() {
+        if (this.observer) {
+            this.observer.disconnect();
+        }
     }
 
     setFormat = (formatType: string, value: string) => {
@@ -240,9 +305,36 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
             nextEditorState = formatText(nextEditorState, formatType, `${formatType}__${value}`);
         } else if (formatType === formatKeys.textAlign) {
             nextEditorState = RichUtils.toggleBlockType(editorState, value);
-        } else nextEditorState = RichUtils.toggleInlineStyle(nextEditorState, formatType.toUpperCase());
+        } else if (formatType === 'link') {
+            const contentState = nextEditorState.getCurrentContent();
+            const contentStateWithEntity = contentState.createEntity('LINK', 'MUTABLE', {
+                url: value,
+                /**
+                 * "explicit" property is required to fix https://github.com/fedorovsky/draft-js-link-detection-plugin/issues/3
+                 * ref - https://github.com/fedorovsky/draft-js-link-detection-plugin/blob/master/src/plugin/draft-js-link-detection-plugin.tsx#L188
+                 *  VBI-4951
+                 */
+                explicit: true,
+            });
+            const entityKey = contentStateWithEntity.getLastCreatedEntityKey();
+
+            // Apply entity
+            nextEditorState = EditorState.set(nextEditorState, { currentContent: contentStateWithEntity });
+
+            // Apply selection
+            nextEditorState = RichUtils.toggleLink(nextEditorState, nextEditorState.getSelection(), entityKey);
+        } else {
+            nextEditorState = RichUtils.toggleInlineStyle(nextEditorState, formatType.toUpperCase());
+        }
         const format = getFormat(nextEditorState);
         this.updateData(nextEditorState, format);
+    };
+
+    removeLink = () => {
+        const selection = this.state.editorState.getSelection();
+        if (!selection.isCollapsed()) {
+            this.updateData(RichUtils.toggleLink(this.state.editorState, selection, null));
+        }
     };
 
     onEditorStateChange = (editorStateUpdated: EditorState) => {
@@ -251,6 +343,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
     };
 
     updateData = (editorStateUpdated: EditorState, customFormat?: any) => {
+        const { parsedValueMentionRequired } = this.props;
         const selection = editorStateUpdated.getSelection();
         if (this.props.entitySelectionAsWhole && selection?.getHasFocus()) {
             const content = editorStateUpdated.getCurrentContent();
@@ -286,19 +379,19 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         const rawData = convertToRaw(editorStateUpdated.getCurrentContent());
         const mentionList = [];
         Object.keys(rawData.entityMap).forEach((key) => {
-            if (rawData.entityMap[key].type === '#mention') {
-                return;
+            if (rawData.entityMap[key].type === 'mention') {               
+                mentionList.push({
+                    emailAddress: rawData.entityMap[key]?.data?.mention?.value,
+                    fullName: rawData.entityMap[key]?.data?.mention?.name,
+                    id: rawData.entityMap[key]?.data?.mention?.id,
+                });
             }
-            mentionList.push({
-                emailAddress: rawData.entityMap[key]?.data?.mention?.value,
-                fullName: rawData.entityMap[key]?.data?.mention?.name,
-            });
         });
         const value = rawData.blocks.map((block) => (!block.text.trim() && '\n') || block.text).join('\n');
         const htmlText = convertToHTMLString(
             editorStateUpdated,
-            this.props.isColorRequired,
-            !!this.props.ValuePopOverProps,
+            this.props.isColorRequired, 
+            !!(this.props.onValueMentionInput || this.props.ValuePopOverProps), 
         );
         this.setState({
             editorState: editorStateUpdated,
@@ -330,26 +423,11 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
     };
 
     selectAll = () => {
-        const { editorState } = this.state;
-        const currentContent = editorState.getCurrentContent();
-        const firstBlock = currentContent.getBlockMap().first();
-        const lastBlock = currentContent.getBlockMap().last();
-        const firstBlockKey = firstBlock.getKey();
-        const lastBlockKey = lastBlock.getKey();
-        const lengthOfLastBlock = lastBlock.getLength();
-
-        const selection = new SelectionState({
-            anchorKey: firstBlockKey,
-            anchorOffset: 0,
-            focusKey: lastBlockKey,
-            focusOffset: lengthOfLastBlock,
-        });
-
-        const newEditorState = EditorState.acceptSelection(editorState, selection);
+        const editorState = selectAll(this.state.editorState);
         this.setState({
-            editorState: newEditorState,
+            editorState,
         });
-        return newEditorState;
+        return editorState;
     };
 
     MentionComponents = () => {
@@ -363,9 +441,10 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
             : { MentionSuggestions: null };
         const mentionPlugin_PREFIX_TWO = showMention.value
             ? createMentionPlugin({
-                  mentionTrigger: MENTION_SUGGESTION_NAME.PREFIX_TWO,
-                  supportWhitespace: false,
+                  mentionTrigger: [MENTION_SUGGESTION_NAME.PREFIX_TWO, '.'],
+                  supportWhitespace: true,
                   entityMutability: 'IMMUTABLE',
+                  mentionRegExp: '.',
               })
             : { MentionSuggestions: null };
 
@@ -403,61 +482,130 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
     };
 
     onSearchChange = ({ trigger, value }: { trigger: string; value: string }) => {
-        const { onMentionInput, valueSuggestion } = this.props;
+        const { onMentionInput, valueSuggestion, onValueMentionInput } = this.props;
+        const { isMentionIncomplete } = this.state;
         if (trigger === MENTION_SUGGESTION_NAME.PREFIX_ONE) {
             onMentionInput?.(value);
+        } else if (onValueMentionInput) {
+            let inComplete = isMentionIncomplete;
+            const matchArray = value.match(/  /);
+            if (Array.isArray(matchArray) && matchArray.length > 0) {
+                if (!isMentionIncomplete) {
+                    inComplete = true;
+                    setTimeout(() => {
+                        this.addColorToSelectedText(value.length + 1, '#ff0000');
+                    }, 200);
+                }
+            } else {
+                inComplete = false;
+            }
+            this.setState({ searchString: value, isMentionIncomplete: inComplete });
+            onValueMentionInput?.(value);
         } else {
             this.setState({
                 suggestions: this.onCustomSuggestionsFilter(value, valueSuggestion),
             });
         }
     };
-    handleReturn = (e: React.KeyboardEvent<{}>) => {
-        const { editorState } = this.state;
-        if (e.shiftKey) {
-            this.setState({ editorState: RichUtils.insertSoftNewline(editorState) });
-            return 'handled';
+
+    onTab = (e: React.KeyboardEvent<{}>) => {
+        const { editorState, valueSearchOpen, searchString } = this.state;
+        if (valueSearchOpen) {
+            if (e.key === 'Tab') {
+                const mention = JSON.parse(
+                    (document.querySelector('.value-mention-item-focused') as HTMLElement).dataset.value,
+                );
+                const isParent = mention.parent && mention.parent.length > 0;
+                const string = `${(isParent ? mention.parent : []).join('.')}${isParent ? '.' : ''}${mention.label}.`;
+                this.setState({ searchString: string });
+                this.onMouseDownMention(mention, searchString);
+
+                return 'handled';
+            }
         }
         return 'not-handled';
     };
 
-    keyBindingFn = (event) => {
-        const { ValuePopOverProps, initialContent } = this.props;
-        const { valueSearchOpen } = this.state;
-        if (KeyBindingUtil.hasCommandModifier(event) && event.keyCode === 13) {
-            return 'submit';
+    handleReturn = (e: React.KeyboardEvent<{}>) => {
+        const { editorState, valueSearchOpen, searchString } = this.state;
+
+        if (e.shiftKey) {
+            this.setState({ editorState: RichUtils.insertSoftNewline(editorState) });
+            return 'handled';
         }
-        if (event.keyCode === 27) {
-            if (ValuePopOverProps && valueSearchOpen) {
-                this.setState({ valueSearchOpen: false });
-            } else {
-                return 'submit';
+        if (valueSearchOpen) {
+            if (e.key === 'Enter') {
+                const mention = JSON.parse(
+                    (document.querySelector('.value-mention-item-focused') as HTMLElement).dataset.value,
+                );
+                const isParent = mention.parent && mention.parent.length > 0;
+                const string = `${(isParent ? mention.parent : []).join('.')}${isParent ? '.' : ''}${mention.label}.`;
+                this.setState({ searchString: string });
+                this.onMouseDownMention(mention, searchString);
+
+                return 'handled';
             }
         }
-        if (ValuePopOverProps && event.keyCode === 51) {
-            // blur editor when # is used for value mention
-            setTimeout(() => {
-                this.editorRef.current.blur();
-            }, 1000);
+        return 'not-handled';
+    };
+ 
+    keyBindingFn = (event): DraftEditorCommand => {
+        if ((KeyBindingUtil.hasCommandModifier(event) && event.keyCode === Key.Enter) || event.keyCode === Key.Escape) {
+            return 'submit' as DraftEditorCommand; 
         }
-
         return getDefaultKeyBinding(event);
     };
 
-    insertTextAtCursor = (textToInsert: string, offset: number = 0, textColor?: string) => {
+    addColorToSelectedText = (offset: number, textColor: string) => {
+        let { editorState: newState } = this.state;
+        let currentSelection = newState.getSelection();
+        const nextOffSet = currentSelection.getFocusOffset();
+        currentSelection = currentSelection.merge({
+            focusOffset: nextOffSet,
+            anchorOffset: nextOffSet - offset,
+        });
+        if (textColor) {
+            newState = EditorState.forceSelection(
+                //  force seletion entered text
+                newState,
+                currentSelection,
+            );
+            newState = formatText(newState, formatKeys.color, `${formatKeys.color}__${textColor}`); //format selection state
+        }
+
+        newState = EditorState.forceSelection(
+            newState,
+            currentSelection.set('anchorOffset', currentSelection.getFocusOffset()) as SelectionState,
+        );
+
+        this.setState({
+            editorState: newState,
+        });
+
+        setTimeout(() => {
+            // after adding selected text, reset focus ref
+            this.editorRef.current.focus();
+        }, 200);
+    };
+
+    insertTextAtCursor = (textToInsert: string, offset: number = 0, textColor?: string, replaceSelection = false) => {
         const { editorState } = this.state;
         const { onFocus } = this.props;
         const textInlineStyle = textColor ? `color__${textColor}` : '';
         const currentContent = editorState.getCurrentContent();
-        const nextOffSet = editorState.getSelection().getFocusOffset();
-        const currentSelection = editorState.getSelection().merge({
-            focusOffset: nextOffSet,
-            anchorOffset: nextOffSet - offset,
-        });
+        let currentSelection = editorState.getSelection();
+        if (!replaceSelection) {
+            const nextOffSet = currentSelection.getFocusOffset();
+            currentSelection = currentSelection.merge({
+                focusOffset: nextOffSet,
+                anchorOffset: nextOffSet - offset,
+            });
+        }
         let newContent = Modifier.replaceText(currentContent, currentSelection, textToInsert);
-        const textToInsertSelection = currentSelection.set(
+        const newContentSelection = newContent.getSelectionAfter();
+        const textToInsertSelection = newContentSelection.set(
             'focusOffset',
-            currentSelection.getFocusOffset() + textToInsert.length,
+            newContentSelection.getFocusOffset(),
         ) as SelectionState;
 
         let inlineStyles = editorState.getCurrentInlineStyle();
@@ -473,19 +621,13 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
             newState = EditorState.forceSelection(
                 //  force seletion entered text
                 newState,
-                textToInsertSelection.set(
-                    'focusOffset',
-                    textToInsertSelection.getAnchorOffset() + textToInsert.length,
-                ) as SelectionState,
+                currentSelection,
             );
             newState = formatText(newState, formatKeys.color, `${formatKeys.color}__${textColor}`); //format selection state
         }
         newState = EditorState.forceSelection(
             newState,
-            textToInsertSelection.set(
-                'anchorOffset',
-                textToInsertSelection.getAnchorOffset() + textToInsert.length,
-            ) as SelectionState,
+            textToInsertSelection.set('focusOffset', textToInsertSelection.getAnchorOffset()) as SelectionState,
         );
 
         this.setState({
@@ -494,20 +636,41 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
 
         setTimeout(() => {
             // after adding selected text, reset focus ref
+            this.editorRef.current.focus();
             onFocus && onFocus();
         }, 200);
         return newState;
     };
-
-    insertEntityAtCursor = (value: { [key: string]: string }, key: string, mentionType = 'mention') => {
-        const { editorState } = this.state;
-
+ 
+    insertEntityAtCursor = (
+        value: { [key: string]: string },
+        key: string,
+        mentionType = 'mention',
+        offset = 0,
+        replaceSelection = false,
+    ) => {
+        const { editorState } = this.state; 
         const stateWithEntity = editorState.getCurrentContent().createEntity(mentionType, 'IMMUTABLE', {
             mention: value,
+            id: Date.now(),
         });
         const entityKey = stateWithEntity.getLastCreatedEntityKey();
-        const stateWithText = Modifier.insertText(stateWithEntity, editorState.getSelection(), key, null, entityKey);
+        stateWithEntity.mergeEntityData(entityKey, { ['id']: entityKey });
+        let currentSelection = editorState.getSelection();
+        if (!replaceSelection) {
+            const nextOffSet = currentSelection.getFocusOffset();
+            currentSelection = currentSelection.merge({
+                focusOffset: nextOffSet,
+                anchorOffset: nextOffSet - offset,
+            });
+        }
+        const stateWithText = Modifier.replaceText(stateWithEntity, currentSelection, key, null, entityKey);
         this.updateData(EditorState.push(editorState, stateWithText, 'insert-fragment'));
+        setTimeout(() => {
+            // after adding selected text, reset focus ref
+            this.editorRef.current.focus();
+            // onFocus && onFocus();
+        }, 200);
     };
 
     onOutsideClick = () => {
@@ -541,6 +704,41 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         return nextEditorState;
     };
 
+    /**
+     * draft editor doesent automatically position the inline toolbar to left when there is no space in the right, it just cuts the element.
+     * this logic will modify the position left depeinding on whether space is available in the left
+     * Note - this only handle right side overflow which is enough for inforiver.
+     */
+    addCornerPositioningToInlineToolbar() {
+        const inlineToolbar = document.querySelector('.inline-toolbar');
+        if (inlineToolbar) {
+            this.observer = new MutationObserver((mutations) => {
+                mutations.forEach((mutation, index) => {
+                    const element = mutation.target as HTMLElement;
+                    if (mutation.type === 'attributes' && index === mutations.length - 1) {
+                        setTimeout(() => {
+                            const rect = element.getBoundingClientRect();
+                            const right = rect.x + rect.width;
+                            if (right > document.body.offsetWidth) {
+                                const offset = right - document.body.offsetWidth;
+                                const oldLeft = element.style.left;
+                                try {
+                                    const oldLeftWithoutPx = Number(oldLeft.split('px')[0]);
+                                    element.style.left = `${oldLeftWithoutPx - offset}px`;
+                                } catch (error) {
+                                    console.log(error);
+                                }
+                            }
+                        }, 30);
+                    }
+                });
+            });
+            this.observer.observe(inlineToolbar, {
+                attributes: true,
+            });
+        }
+    }
+
     blockStyleFn(block) {
         switch (block.getType()) {
             case 'blockquote':
@@ -556,6 +754,37 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         }
     }
 
+    onMouseDownMention = (mention, searchValue) => {
+        const { getMentionDataById, onValueMentionInput, parsedValueMentionRequired } = this.props;
+        let length = searchValue.length;
+        if (mention.parent.length > 0) {
+            const searchArray = searchValue.split('.');
+            if (searchArray.length <= mention.parent.length) {
+                length = mention.parent.join('.').length + 1;
+            }
+        }
+        if (length === 0) {
+            const isParent = mention.parent && mention.parent.length > 0;
+            const string = `${(isParent ? mention.parent : []).join('.')}${isParent ? '.' : ''}`;
+            length = string.length;
+        }
+        if (!mention.hasLeaf) {
+            const data = getMentionDataById(mention.id);
+            
+            this.insertEntityAtCursor(data, parsedValueMentionRequired ? data.value: data.title, '#mention', length + 1);
+            onValueMentionInput('');
+            this.setState({ valueSearchOpen: false, searchString: '' });
+            return;
+        }
+        const isParent = mention.parent && mention.parent.length > 0;
+        const string = `${(isParent ? mention.parent : []).join('.')}${isParent ? '.' : ''}${mention.label}.`;
+        this.insertTextAtCursor(string, length, '#333');
+        setTimeout(() => {
+            this.setState({ valueSearchOpen: true, searchString: searchValue });
+        }, 200);
+        onValueMentionInput === null || onValueMentionInput === void 0 ? void 0 : onValueMentionInput(string);
+    };
+
     render() {
         const {
             textAlignment,
@@ -564,22 +793,42 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
             isMentionLoading,
             placeholder,
             readOnly,
+            inplaceToolbar,
             onBlur,
             onFocus,
             valueSuggestion,
             ValuePopOverProps,
+            onValueMentionInput,
         } = this.props;
         const { editorState, peopleSearchOpen, valueSearchOpen, suggestions, format } = this.state;
         const MentionComp = this.mentionSuggestionList?.MentionSuggestions;
         const ValueMentionComp = this.mentionSuggestionList?.ValueSuggestion;
-        const keyBindingFn = !peopleSearchOpen ? this.keyBindingFn : undefined;
-        const PopoverComponent = ValuePopOverProps ? ValuePopOverProps : PopOverContainer;
+        const isKeyEventNotAllowed = peopleSearchOpen || valueSearchOpen;
+        const keyBindingFn = (isKeyEventNotAllowed
+            ? undefined
+            : this.props.customKeyBinder ?? this.keyBindingFn) as unknown as (
+            event: React.KeyboardEvent<Element>,
+        ) => string;
+        const SuggestionListComp = onValueMentionInput
+            ? ValueMentionSuggestionList({
+                  onmousedown: this.onMouseDownMention,
+              })
+            : SuggestionList;
+
+        const PopOverContainerMention = ValuePopOverProps ? ValuePopOverProps : ValuePopOverContainer;
+        const valueSuggestionList = onValueMentionInput ? valueSuggestion : suggestions;
+        const setFormat = this.setFormat;
+        // decorator for link only works when its passed from `decorator` prop.
+        const decorators = this.props.linkDecorator ? [this.props.linkDecorator] : [];
+
         return (
             <Fragment>
-                {toolbarComponent &&
+                {!inplaceToolbar &&
+                    toolbarComponent &&
                     React.cloneElement(toolbarComponent, {
                         currentFormat: format,
                         setFormat: this.setFormat,
+                        removeLink: this.removeLink,
                     })}
                 <Editor
                     ref={this.editorRef}
@@ -588,10 +837,12 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
                     stripPastedStyles
                     editorState={editorState}
                     placeholder={placeholder}
+                    decorators={decorators}
                     onChange={this.onEditorStateChange}
                     textAlignment={textAlignment as any}
                     handleKeyCommand={this.handleKeyCommand}
-                    customStyleMap={CUSTOM_STYLE_MAP}
+                    customStyleMap={CUSTOM_STYLE_MAP} 
+                    onTab={this.onTab} 
                     plugins={this.plugins}
                     handleReturn={this.handleReturn}
                     keyBindingFn={keyBindingFn}
@@ -603,6 +854,21 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
                     handlePastedText={this.handlePastedText}
                     blockStyleFn={this.blockStyleFn}
                 />
+                {toolbarComponent && inplaceToolbar && (
+                    <InlineToolbar>
+                        {(externalProps) => (
+                            <>
+                                {React.cloneElement(toolbarComponent, {
+                                    currentFormat: format,
+                                    setFormat,
+                                    onOverrideContent: externalProps.onOverrideContent,
+                                    externalProps,
+                                    removeLink: this.removeLink,
+                                })}
+                            </>
+                        )}
+                    </InlineToolbar>
+                )}
                 <div className="list_container">
                     {peopleSearchOpen && !isMentionLoading && peopleSuggestion?.length === 0 && (
                         <ul style={{ padding: '0 10px' }}>No Data found</ul>
@@ -615,17 +881,17 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
                         suggestions={peopleSuggestion || []}
                         onSearchChange={this.onSearchChange}
                         entryComponent={SuggestionList}
-                        popoverContainer={PopOverContainer}
+                        popoverContainer={PeoplePopOverContainer}
                     />
                 )}
                 {ValueMentionComp && (
                     <ValueMentionComp
                         open={valueSearchOpen}
                         onOpenChange={this.onOpenValueChange}
-                        suggestions={suggestions}
+                        suggestions={valueSuggestionList}
                         onSearchChange={this.onSearchChange}
-                        entryComponent={SuggestionList}
-                        popoverContainer={PopoverComponent}
+                        entryComponent={SuggestionListComp}
+                        popoverContainer={PopOverContainerMention}
                     />
                 )}
             </Fragment>

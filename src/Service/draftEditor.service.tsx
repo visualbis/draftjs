@@ -1,5 +1,5 @@
 import { convertFromHTML, convertToHTML } from 'draft-convert';
-import { convertToRaw, DraftInlineStyle, EditorState, Modifier, RichUtils } from 'draft-js';
+import { convertToRaw, DraftInlineStyle, EditorState, Modifier, RichUtils, SelectionState } from 'draft-js';
 import draftToHtml from 'draftjs-to-html';
 import React from 'react';
 import { formatKeys, mentionAnchorStyle, styleValues } from './UIconstants';
@@ -19,7 +19,19 @@ export interface IDraftElementFormats {
     borderColor?: string;
     backgroundColor?: string;
     justifyContent?: string;
-    strikeThrough?: boolean;
+    strikeThrough?: boolean; 
+    link?: {
+        url: string;
+        text?: string;
+    };
+}
+
+const  randomString = () => {
+    const length = 32;
+    const chars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-"
+    let result = '';
+    for (let i = length; i > 0; --i) result += chars[Math.floor(Math.random() * chars.length)];
+    return result; 
 }
 
 const resolveCustomStyleMap = (style: DraftInlineStyle) => {
@@ -38,10 +50,10 @@ const resolveCustomStyleMap = (style: DraftInlineStyle) => {
     return colObj;
 };
 
-const getFormat = (editorStateData: EditorState) => {
-    const style = editorStateData.getCurrentInlineStyle();
-    const selection = editorStateData.getSelection();
-    const blockType = editorStateData.getCurrentContent().getBlockForKey(selection.getStartKey()).getType();
+const getFormat = (editorState: EditorState) => {
+    const style = editorState.getCurrentInlineStyle();
+    const selection = editorState.getSelection();
+    const blockType = editorState.getCurrentContent().getBlockForKey(selection.getStartKey()).getType();
     const format: IDraftElementFormats = {
         bold: style.has(formatKeys.bold.toUpperCase()),
         italic: style.has(formatKeys.italic.toUpperCase()),
@@ -49,8 +61,10 @@ const getFormat = (editorStateData: EditorState) => {
         subScript: style.has(formatKeys.subScript.toUpperCase()),
         superScript: style.has(formatKeys.superScript.toUpperCase()),
         textAlign: blockType,
-        strikeThrough: style.has(formatKeys.strikethrough.toUpperCase()),
+        strikeThrough: style.has(formatKeys.strikethrough.toUpperCase()), 
+        link: getLinkState(editorState), 
     };
+
     style.forEach((styleKey) => {
         if (styleKey) {
             styleValues.some((styleValue) => {
@@ -118,7 +132,18 @@ const moveColorToTop = (editorState: EditorState) => {
         });
         return EditorState.push(editorState, contentState, 'change-inline-style');
     }
-    return editorState;
+    return editorState; 
+};
+
+const getSelectedText = (editorState: EditorState) => {
+    let selection = editorState.getSelection();
+    const anchorKey = selection.getAnchorKey();
+    const currentContent = editorState.getCurrentContent();
+    const currentBlock = currentContent.getBlockForKey(anchorKey);
+
+    const start = selection.getStartOffset();
+    const end = selection.getEndOffset();
+    return currentBlock.getText().slice(start, end); 
 };
 
 const getContentFromEditorState = (editorStateUpdated: EditorState) => {
@@ -166,14 +191,15 @@ const convertFromHTMLString = (html: string): Draft.ContentState => {
         htmlToEntity: (nodeName, node, createEntity) => {
             if (nodeName === 'span' && node.classList.contains('mention')) {
                 const data = JSON.parse(node.dataset.value);
-                return createEntity('mention', 'IMMUTABLE', { mention: { name: data.name, ...data } });
+                const id = node.dataset.id;
+                return createEntity('mention', 'IMMUTABLE', { mention: { name: data.name, ...data }, id });
             } else if (nodeName === 'span' && node.classList.contains('hash-mention')) {
                 const data = JSON.parse(node.dataset.value);
-                return createEntity('#mention', 'IMMUTABLE', { mention: { name: data.name, ...data } });
+                const id = node.dataset.id;
+                return createEntity('#mention', 'IMMUTABLE', { mention: { name: data.name, ...data }, id });
             } else if (nodeName === 'a') {
                 const data = JSON.parse(node.dataset.value);
-
-                return createEntity('link', 'MUTABLE', { ...data });
+                return createEntity('LINK', 'MUTABLE', { ...data });
             }
         },
     })(html);
@@ -220,11 +246,13 @@ const convertToHTMLString = (
             }
         },
         entityToHTML: (entity, originalText) => {
-            if (entity.type === 'mention') {
+            if (entity.type === 'mention') {                
+                const id = entity.data.id  ? entity.data.id :  randomString();
                 return (
                     <span
                         className="mention"
                         style={{ ...mentionAnchorStyle, color: isColorRequired ? '#0078d4' : null }}
+                        data-id={id}
                         data-value={JSON.stringify({
                             ...entity.data.mention,
                             image: '',
@@ -235,20 +263,22 @@ const convertToHTMLString = (
                     </span>
                 );
             } else if (entity.type === '#mention') {
+                const key = entity.data.mention?.key.match(/#\[(.*?)\]/g) ? entity.data.mention?.key : `#[${entity.data.mention?.key}]`; // Migration changes                
                 return (
                     <span
                         className="hash-mention"
                         title={dynamicMention ? entity.data.mention?.title : null}
                         style={{
                             ...mentionAnchorStyle,
-                        }}
+                        }} 
+                        data-id={entity.data.id} 
                         data-value={JSON.stringify({
                             ...entity.data.mention,
                             image: '',
                             avatar: '',
                         })}
-                    >
-                        {dynamicMention ? `#[${entity.data.mention?.key}]` : originalText}
+                    > 
+                        {dynamicMention ? key : originalText}
                     </span>
                 );
             } else if (entity.type === 'link' || entity.type === 'LINK') {
@@ -271,7 +301,42 @@ const convertToHTMLString = (
     })(editorState.getCurrentContent());
 };
 
+const getLinkState = (editorState: EditorState): IDraftElementFormats['link'] => {
+    const contentState = editorState.getCurrentContent();
+    const startKey = editorState.getSelection().getStartKey();
+    const startOffset = editorState.getSelection().getStartOffset();
+    const blockWithLinkAtBeginning = contentState.getBlockForKey(startKey);
+    const linkKey = blockWithLinkAtBeginning.getEntityAt(startOffset);
+    if (linkKey) {
+        const linkInstance = contentState.getEntity(linkKey);
+        return {
+            url: linkInstance.getData().url,
+            text: getSelectedText(editorState),
+        };
+    }
+    return null;
+};
+
+const selectAll = (editorState: EditorState) => {
+    const currentContent = editorState.getCurrentContent();
+    const firstBlock = currentContent.getBlockMap().first();
+    const lastBlock = currentContent.getBlockMap().last();
+    const firstBlockKey = firstBlock.getKey();
+    const lastBlockKey = lastBlock.getKey();
+    const lengthOfLastBlock = lastBlock.getLength();
+
+    const selection = new SelectionState({
+        anchorKey: firstBlockKey,
+        anchorOffset: 0,
+        focusKey: lastBlockKey,
+        focusOffset: lengthOfLastBlock,
+    });
+
+    return EditorState.acceptSelection(editorState, selection);
+};
+
 export {
+    selectAll,
     convertFromHTMLString,
     resolveCustomStyleMap,
     formatText,
