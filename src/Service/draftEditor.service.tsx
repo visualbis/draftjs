@@ -19,7 +19,7 @@ export interface IDraftElementFormats {
     borderColor?: string;
     backgroundColor?: string;
     justifyContent?: string;
-    strikeThrough?: boolean;
+    strikeThrough?: boolean; 
     link?: {
         url: string;
         text?: string;
@@ -31,7 +31,7 @@ const  randomString = () => {
     const chars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-"
     let result = '';
     for (let i = length; i > 0; --i) result += chars[Math.floor(Math.random() * chars.length)];
-    return result;
+    return result; 
 }
 
 const resolveCustomStyleMap = (style: DraftInlineStyle) => {
@@ -61,8 +61,8 @@ const getFormat = (editorState: EditorState) => {
         subScript: style.has(formatKeys.subScript.toUpperCase()),
         superScript: style.has(formatKeys.superScript.toUpperCase()),
         textAlign: blockType,
-        strikeThrough: style.has(formatKeys.strikethrough.toUpperCase()),
-        link: getLinkState(editorState),
+        strikeThrough: style.has(formatKeys.strikethrough.toUpperCase()), 
+        link: getLinkState(editorState), 
     };
 
     style.forEach((styleKey) => {
@@ -132,7 +132,7 @@ const moveColorToTop = (editorState: EditorState) => {
         });
         return EditorState.push(editorState, contentState, 'change-inline-style');
     }
-    return editorState;
+    return editorState; 
 };
 
 const getSelectedText = (editorState: EditorState) => {
@@ -143,7 +143,7 @@ const getSelectedText = (editorState: EditorState) => {
 
     const start = selection.getStartOffset();
     const end = selection.getEndOffset();
-    return currentBlock.getText().slice(start, end);
+    return currentBlock.getText().slice(start, end); 
 };
 
 const getContentFromEditorState = (editorStateUpdated: EditorState) => {
@@ -263,21 +263,21 @@ const convertToHTMLString = (
                     </span>
                 );
             } else if (entity.type === '#mention') {
-                const key = entity.data.mention?.key.match(/#\[(.*?)\]/g) ? entity.data.mention?.key : `#[${entity.data.mention?.key}]`; // Migration changes                
+                const key = entity.data.mention?.key?.match(/#\[(.*?)\]/g) ? entity.data.mention?.key : `#[${entity.data.mention?.key}]`; // Migration changes                
                 return (
                     <span
                         className="hash-mention"
                         title={dynamicMention ? entity.data.mention?.title : null}
                         style={{
                             ...mentionAnchorStyle,
-                        }}
-                        data-id={entity.data.id}
+                        }} 
+                        data-id={entity.data.id} 
                         data-value={JSON.stringify({
                             ...entity.data.mention,
                             image: '',
                             avatar: '',
                         })}
-                    >
+                    > 
                         {dynamicMention ? key : originalText}
                     </span>
                 );

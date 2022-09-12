@@ -118,6 +118,7 @@ interface IDraftEditorState {
 }
 
 const linkifyPlugin = createLinkifyPlugin();
+
 const inlineToolbarPlugin = createInlineToolbarPlugin({
     theme: {
         toolbarStyles: {
@@ -127,8 +128,8 @@ const inlineToolbarPlugin = createInlineToolbarPlugin({
     },
 });
 const { InlineToolbar } = inlineToolbarPlugin;
-const PeoplePopOverContainer = PopOverContainer({ width: 220,isPeopleMention: true });
-const ValuePopOverContainer = PopOverContainer({ width: 120, isPeopleMention : false });
+const PeoplePopOverContainer = PopOverContainer({ width: 220, isPeopleMention: true });
+const ValuePopOverContainer = PopOverContainer({ width: 120, isPeopleMention: false });
 
 class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
     private mentionSuggestionList: any;
@@ -149,7 +150,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
             suggestions: props.valueSuggestion,
             searchString: '',
             isMentionIncomplete: false,
-        };
+        }; 
 
         this.plugins = [];
         if (this.props.inplaceToolbar) {
@@ -158,7 +159,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         if (!disableLinkify) {
             this.plugins.push(linkifyPlugin);
         }
-
+ 
         if (props.decorators) {
             this.plugins.push({ decorators: props.decorators });
         }
@@ -306,8 +307,15 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
             nextEditorState = RichUtils.toggleBlockType(editorState, value);
         } else if (formatType === 'link') {
             const contentState = nextEditorState.getCurrentContent();
-            const selectionState = nextEditorState.getSelection();
-            const contentStateWithEntity = contentState.createEntity('LINK', 'MUTABLE', { url: value, selectionState });
+            const contentStateWithEntity = contentState.createEntity('LINK', 'MUTABLE', {
+                url: value,
+                /**
+                 * "explicit" property is required to fix https://github.com/fedorovsky/draft-js-link-detection-plugin/issues/3
+                 * ref - https://github.com/fedorovsky/draft-js-link-detection-plugin/blob/master/src/plugin/draft-js-link-detection-plugin.tsx#L188
+                 *  VBI-4951
+                 */
+                explicit: true,
+            });
             const entityKey = contentStateWithEntity.getLastCreatedEntityKey();
 
             // Apply entity
@@ -382,8 +390,8 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         const value = rawData.blocks.map((block) => (!block.text.trim() && '\n') || block.text).join('\n');
         const htmlText = convertToHTMLString(
             editorStateUpdated,
-            this.props.isColorRequired,
-            !!(this.props.onValueMentionInput || this.props.ValuePopOverProps),
+            this.props.isColorRequired, 
+            !!(this.props.onValueMentionInput || this.props.ValuePopOverProps), 
         );
         this.setState({
             editorState: editorStateUpdated,
@@ -423,7 +431,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
     };
 
     MentionComponents = () => {
-        const { showMention } = this.props;
+        const { showMention, decorators } = this.props;
         const mentionPlugin_PREFIX_ONE = showMention.people
             ? createMentionPlugin({
                   mentionTrigger: MENTION_SUGGESTION_NAME.PREFIX_ONE,
@@ -540,10 +548,10 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         }
         return 'not-handled';
     };
-
+ 
     keyBindingFn = (event): DraftEditorCommand => {
         if ((KeyBindingUtil.hasCommandModifier(event) && event.keyCode === Key.Enter) || event.keyCode === Key.Escape) {
-            return 'submit' as DraftEditorCommand;
+            return 'submit' as DraftEditorCommand; 
         }
         return getDefaultKeyBinding(event);
     };
@@ -633,7 +641,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         }, 200);
         return newState;
     };
-
+ 
     insertEntityAtCursor = (
         value: { [key: string]: string },
         key: string,
@@ -641,15 +649,13 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         offset = 0,
         replaceSelection = false,
     ) => {
-        const { editorState } = this.state;
+        const { editorState } = this.state; 
         const stateWithEntity = editorState.getCurrentContent().createEntity(mentionType, 'IMMUTABLE', {
             mention: value,
-            id: Date.now()
+            id: Date.now(),
         });
         const entityKey = stateWithEntity.getLastCreatedEntityKey();
-        stateWithEntity.mergeEntityData(entityKey,
-            {["id"]: entityKey }
-          )
+        stateWithEntity.mergeEntityData(entityKey, { ['id']: entityKey });
         let currentSelection = editorState.getSelection();
         if (!replaceSelection) {
             const nextOffSet = currentSelection.getFocusOffset();
@@ -835,8 +841,8 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
                     onChange={this.onEditorStateChange}
                     textAlignment={textAlignment as any}
                     handleKeyCommand={this.handleKeyCommand}
-                    customStyleMap={CUSTOM_STYLE_MAP}
-                    onTab={this.onTab}
+                    customStyleMap={CUSTOM_STYLE_MAP} 
+                    onTab={this.onTab} 
                     plugins={this.plugins}
                     handleReturn={this.handleReturn}
                     keyBindingFn={keyBindingFn}
