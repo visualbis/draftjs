@@ -48,7 +48,8 @@ const SuggestionListComp = (listProps: IListProps) =>
                 id: parentProps.id,
                 onMouseEnter: parentProps.onMouseEnter,
                 onMouseDown: () => listProps.onmousedown(mention, searchValue),
-            };
+            }; 
+            const labelStyle: React.CSSProperties = !mention.hasLeaf  ?  { width: '92px'} :  null; 
             return (
                 <div
                     {...newProps}
@@ -66,6 +67,7 @@ const SuggestionListComp = (listProps: IListProps) =>
                             <div
                                 title={mention.label}
                                 className={`${theme?.mentionSuggestionsEntryTitle} ${'list-title'}`}
+                                style={labelStyle} 
                             >
                                 {mention.label}
                             </div>

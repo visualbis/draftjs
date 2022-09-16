@@ -584,7 +584,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
 
         setTimeout(() => {
             // after adding selected text, reset focus ref
-            this.editorRef.current.focus();
+            this.editorRef.current?.focus(); 
         }, 200);
     };
 
@@ -636,7 +636,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
 
         setTimeout(() => {
             // after adding selected text, reset focus ref
-            this.editorRef.current.focus();
+            this.editorRef.current?.focus();
             onFocus && onFocus();
         }, 200);
         return newState;
@@ -668,7 +668,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         this.updateData(EditorState.push(editorState, stateWithText, 'insert-fragment'));
         setTimeout(() => {
             // after adding selected text, reset focus ref
-            this.editorRef.current.focus();
+            this.editorRef.current?.focus();
             // onFocus && onFocus();
         }, 200);
     };
@@ -679,7 +679,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
 
     getEditorContainerRect = () => {
         if (this.editorRef.current) {
-            return this.editorRef.current.getEditorRef().editor.getBoundingClientRect();
+            return this.editorRef.current?.getEditorRef().editor.getBoundingClientRect();
         }
     };
 
