@@ -584,7 +584,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
 
         setTimeout(() => {
             // after adding selected text, reset focus ref
-            this.editorRef.current?.focus();
+            this.editorRef.current?.focus(); 
         }, 200);
     };
 
