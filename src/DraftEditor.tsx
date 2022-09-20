@@ -511,8 +511,8 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
     onTab = (e: React.KeyboardEvent<{}>) => {
         const mentionItem = document.querySelector('.value-mention-item-focused');
         const { editorState, valueSearchOpen, searchString } = this.state;
-        if (valueSearchOpen) {
-            if (e.key === 'Tab' && mentionItem) {
+        if (valueSearchOpen && mentionItem) {
+            if (e.key === 'Tab') {
                 const mention = JSON.parse((mentionItem as HTMLElement).dataset.value);
                 const isParent = mention.parent && mention.parent.length > 0;
                 const string = `${(isParent ? mention.parent : []).join('.')}${isParent ? '.' : ''}${mention.label}.`;
@@ -533,8 +533,8 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
             this.setState({ editorState: RichUtils.insertSoftNewline(editorState) });
             return 'handled';
         }
-        if (valueSearchOpen) {
-            if (e.key === 'Enter' && mentionItem) {
+        if (valueSearchOpen && mentionItem) {
+            if (e.key === 'Enter') {
                 const mention = JSON.parse((mentionItem as HTMLElement).dataset.value);
                 const isParent = mention.parent && mention.parent.length > 0;
                 const string = `${(isParent ? mention.parent : []).join('.')}${isParent ? '.' : ''}${mention.label}.`;
