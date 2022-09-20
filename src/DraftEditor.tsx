@@ -509,12 +509,11 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
     };
 
     onTab = (e: React.KeyboardEvent<{}>) => {
+        const mentionItem = document.querySelector('.value-mention-item-focused');
         const { editorState, valueSearchOpen, searchString } = this.state;
         if (valueSearchOpen) {
-            if (e.key === 'Tab' && document.querySelector('.value-mention-item-focused')) {
-                const mention = JSON.parse(
-                    (document.querySelector('.value-mention-item-focused') as HTMLElement).dataset.value,
-                );
+            if (e.key === 'Tab' && mentionItem) {
+                const mention = JSON.parse((mentionItem as HTMLElement).dataset.value);
                 const isParent = mention.parent && mention.parent.length > 0;
                 const string = `${(isParent ? mention.parent : []).join('.')}${isParent ? '.' : ''}${mention.label}.`;
                 this.setState({ searchString: string });
@@ -527,6 +526,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
     };
 
     handleReturn = (e: React.KeyboardEvent<{}>) => {
+        const mentionItem = document.querySelector('.value-mention-item-focused');
         const { editorState, valueSearchOpen, searchString } = this.state;
 
         if (e.shiftKey) {
@@ -534,10 +534,8 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
             return 'handled';
         }
         if (valueSearchOpen) {
-            if (e.key === 'Enter' && document.querySelector('.value-mention-item-focused')) {
-                const mention = JSON.parse(
-                    (document.querySelector('.value-mention-item-focused') as HTMLElement).dataset.value,
-                );
+            if (e.key === 'Enter' && mentionItem) {
+                const mention = JSON.parse((mentionItem as HTMLElement).dataset.value);
                 const isParent = mention.parent && mention.parent.length > 0;
                 const string = `${(isParent ? mention.parent : []).join('.')}${isParent ? '.' : ''}${mention.label}.`;
                 this.setState({ searchString: string });
