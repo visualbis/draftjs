@@ -509,10 +509,10 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
     };
 
     onTab = (e: React.KeyboardEvent<{}>) => {
-        const mentionItem = document.querySelector('.value-mention-item-focused');
         const { editorState, valueSearchOpen, searchString } = this.state;
-        if (valueSearchOpen && mentionItem) {
-            if (e.key === 'Tab') {
+        if (valueSearchOpen) {
+            const mentionItem = document.querySelector('.value-mention-item-focused');
+            if (e.key === 'Tab' && mentionItem) {
                 const mention = JSON.parse((mentionItem as HTMLElement).dataset.value);
                 const isParent = mention.parent && mention.parent.length > 0;
                 const string = `${(isParent ? mention.parent : []).join('.')}${isParent ? '.' : ''}${mention.label}.`;
@@ -526,15 +526,15 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
     };
 
     handleReturn = (e: React.KeyboardEvent<{}>) => {
-        const mentionItem = document.querySelector('.value-mention-item-focused');
         const { editorState, valueSearchOpen, searchString } = this.state;
 
         if (e.shiftKey) {
             this.setState({ editorState: RichUtils.insertSoftNewline(editorState) });
             return 'handled';
         }
-        if (valueSearchOpen && mentionItem) {
-            if (e.key === 'Enter') {
+        if (valueSearchOpen) {
+            const mentionItem = document.querySelector('.value-mention-item-focused');
+            if (e.key === 'Enter' && mentionItem) {
                 const mention = JSON.parse((mentionItem as HTMLElement).dataset.value);
                 const isParent = mention.parent && mention.parent.length > 0;
                 const string = `${(isParent ? mention.parent : []).join('.')}${isParent ? '.' : ''}${mention.label}.`;
