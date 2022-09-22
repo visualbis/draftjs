@@ -1,9 +1,9 @@
 import { default as Editor } from '@draft-js-plugins/editor';
 import { onDraftEditorCopy, onDraftEditorCut, handleDraftEditorPastedText } from 'draftjs-conductor';
-import createMentionPlugin from '@draft-js-plugins/mention';
+import createMentionPlugin from '@lumel/mention';
 import createLinkifyPlugin from 'draft-js-link-detection-plugin';
 import createInlineToolbarPlugin from '@draft-js-plugins/inline-toolbar';
-import '@draft-js-plugins/mention/lib/plugin.css';
+import '@lumel/mention/lib/plugin.css';
 import '@draft-js-plugins/inline-toolbar/lib/plugin.css';
 import {
     ContentState,
@@ -509,17 +509,18 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
     };
 
     onTab = (e: React.KeyboardEvent<{}>) => {
-        const { editorState, valueSearchOpen, searchString } = this.state;
+        const { valueSearchOpen, searchString } = this.state;
         if (valueSearchOpen) {
-            const mentionItem = document.querySelector('.value-mention-item-focused');
-            if (e.key === 'Tab' && mentionItem) {
-                const mention = JSON.parse((mentionItem as HTMLElement).dataset.value);
-                const isParent = mention.parent && mention.parent.length > 0;
-                const string = `${(isParent ? mention.parent : []).join('.')}${isParent ? '.' : ''}${mention.label}.`;
-                this.setState({ searchString: string });
-                this.onMouseDownMention(mention, searchString);
-
-                return 'handled';
+            if (e.key === 'Tab') {
+                const value = (document.querySelector('.value-mention-item-focused') as HTMLElement)?.dataset.value;
+                if(value) {
+                    const mention = JSON.parse(value);
+                    const isParent = mention.parent && mention.parent.length > 0;
+                    const string = `${(isParent ? mention.parent : []).join('.')}${isParent ? '.' : ''}${mention.label}.`;
+                    this.setState({ searchString: string });
+                    this.onMouseDownMention(mention, searchString);
+                    return 'handled';
+                }
             }
         }
         return 'not-handled';
@@ -533,15 +534,17 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
             return 'handled';
         }
         if (valueSearchOpen) {
-            const mentionItem = document.querySelector('.value-mention-item-focused');
-            if (e.key === 'Enter' && mentionItem) {
-                const mention = JSON.parse((mentionItem as HTMLElement).dataset.value);
-                const isParent = mention.parent && mention.parent.length > 0;
-                const string = `${(isParent ? mention.parent : []).join('.')}${isParent ? '.' : ''}${mention.label}.`;
-                this.setState({ searchString: string });
-                this.onMouseDownMention(mention, searchString);
-
-                return 'handled';
+            if (e.key === 'Enter') {
+                const value = (document.querySelector('.value-mention-item-focused') as HTMLElement)?.dataset.value;
+                if(value) {
+                    const mention = JSON.parse(value);
+                    const isParent = mention.parent && mention.parent.length > 0;
+                    const string = `${(isParent ? mention.parent : []).join('.')}${isParent ? '.' : ''}${mention.label}.`;
+                    this.setState({ searchString: string });
+                    this.onMouseDownMention(mention, searchString);
+                    return 'handled';
+                }
+             
             }
         }
         return 'not-handled';
