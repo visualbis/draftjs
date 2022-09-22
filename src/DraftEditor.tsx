@@ -475,7 +475,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         const get = (obj, attr) => (obj.get ? obj.get(attr) : obj[attr]);
         const value = searchValue.toLowerCase();
         const filteredSuggestions = suggestions.filter(
-            (suggestion) => !value || get(suggestion, 'name').toLowerCase().indexOf(value) > -1,
+            (suggestion) => !value || get(suggestion, 'name').toString().toLowerCase().indexOf(value) > -1,
         );
         const length = size(filteredSuggestions) < 15 ? size(filteredSuggestions) : 15;
         return filteredSuggestions.slice(0, length);
@@ -509,7 +509,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
     };
 
     onTab = (e: React.KeyboardEvent<{}>) => {
-        const { editorState, valueSearchOpen, searchString } = this.state;
+        const { valueSearchOpen, searchString } = this.state;
         if (valueSearchOpen) {
             if (e.key === 'Tab') {
                 const value = (document.querySelector('.value-mention-item-focused') as HTMLElement)?.dataset.value;
@@ -585,7 +585,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
 
         setTimeout(() => {
             // after adding selected text, reset focus ref
-            this.editorRef.current?.focus();
+            this.editorRef.current?.focus(); 
         }, 200);
     };
 
