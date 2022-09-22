@@ -1,4 +1,4 @@
-import { MentionData } from '@draft-js-plugins/mention';
+import { MentionData } from '@lumel/mention';
 import React from 'react';
 import '../Styles';
 import { EntryComponentProps } from './SuggestionList';
