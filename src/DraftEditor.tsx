@@ -1,9 +1,9 @@
 import { default as Editor } from '@draft-js-plugins/editor';
 import { onDraftEditorCopy, onDraftEditorCut, handleDraftEditorPastedText } from 'draftjs-conductor';
-import createMentionPlugin from '@draft-js-plugins/mention';
+import createMentionPlugin from '@lumel/mention';
 import createLinkifyPlugin from 'draft-js-link-detection-plugin';
 import createInlineToolbarPlugin from '@draft-js-plugins/inline-toolbar';
-import '@draft-js-plugins/mention/lib/plugin.css';
+import '@lumel/mention/lib/plugin.css';
 import '@draft-js-plugins/inline-toolbar/lib/plugin.css';
 import {
     ContentState,
@@ -475,7 +475,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         const get = (obj, attr) => (obj.get ? obj.get(attr) : obj[attr]);
         const value = searchValue.toLowerCase();
         const filteredSuggestions = suggestions.filter(
-            (suggestion) => !value || get(suggestion, 'name').toLowerCase().indexOf(value) > -1,
+            (suggestion) => !value || get(suggestion, 'name').toString().toLowerCase().indexOf(value) > -1,
         );
         const length = size(filteredSuggestions) < 15 ? size(filteredSuggestions) : 15;
         return filteredSuggestions.slice(0, length);
@@ -509,18 +509,18 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
     };
 
     onTab = (e: React.KeyboardEvent<{}>) => {
-        const { editorState, valueSearchOpen, searchString } = this.state;
+        const { valueSearchOpen, searchString } = this.state;
         if (valueSearchOpen) {
             if (e.key === 'Tab') {
-                const mention = JSON.parse(
-                    (document.querySelector('.value-mention-item-focused') as HTMLElement).dataset.value,
-                );
-                const isParent = mention.parent && mention.parent.length > 0;
-                const string = `${(isParent ? mention.parent : []).join('.')}${isParent ? '.' : ''}${mention.label}.`;
-                this.setState({ searchString: string });
-                this.onMouseDownMention(mention, searchString);
-
-                return 'handled';
+                const value = (document.querySelector('.value-mention-item-focused') as HTMLElement)?.dataset.value;
+                if(value) {
+                    const mention = JSON.parse(value);
+                    const isParent = mention.parent && mention.parent.length > 0;
+                    const string = `${(isParent ? mention.parent : []).join('.')}${isParent ? '.' : ''}${mention.label}.`;
+                    this.setState({ searchString: string });
+                    this.onMouseDownMention(mention, searchString);
+                    return 'handled';
+                }
             }
         }
         return 'not-handled';
@@ -535,15 +535,16 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         }
         if (valueSearchOpen) {
             if (e.key === 'Enter') {
-                const mention = JSON.parse(
-                    (document.querySelector('.value-mention-item-focused') as HTMLElement).dataset.value,
-                );
-                const isParent = mention.parent && mention.parent.length > 0;
-                const string = `${(isParent ? mention.parent : []).join('.')}${isParent ? '.' : ''}${mention.label}.`;
-                this.setState({ searchString: string });
-                this.onMouseDownMention(mention, searchString);
-
-                return 'handled';
+                const value = (document.querySelector('.value-mention-item-focused') as HTMLElement)?.dataset.value;
+                if(value) {
+                    const mention = JSON.parse(value);
+                    const isParent = mention.parent && mention.parent.length > 0;
+                    const string = `${(isParent ? mention.parent : []).join('.')}${isParent ? '.' : ''}${mention.label}.`;
+                    this.setState({ searchString: string });
+                    this.onMouseDownMention(mention, searchString);
+                    return 'handled';
+                }
+             
             }
         }
         return 'not-handled';

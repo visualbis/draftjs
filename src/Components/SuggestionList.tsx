@@ -1,4 +1,4 @@
-import { MentionData, MentionPluginTheme } from '@draft-js-plugins/mention';
+import { MentionData, MentionPluginTheme } from '@lumel/mention';
 import React, { MouseEvent } from 'react';
 import '../Styles';
 
