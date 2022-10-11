@@ -441,10 +441,10 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
             : { MentionSuggestions: null };
         const mentionPlugin_PREFIX_TWO = showMention.value
             ? createMentionPlugin({
-                  mentionTrigger: [MENTION_SUGGESTION_NAME.PREFIX_TWO, '.'],
+                  mentionTrigger: [MENTION_SUGGESTION_NAME.PREFIX_TWO],
                   supportWhitespace: true,
                   entityMutability: 'IMMUTABLE',
-                  mentionRegExp: '.',
+                  mentionRegExp: '.',                
               })
             : { MentionSuggestions: null };
 
