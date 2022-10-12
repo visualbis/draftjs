@@ -323,6 +323,8 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
 
             // Apply selection
             nextEditorState = RichUtils.toggleLink(nextEditorState, nextEditorState.getSelection(), entityKey);
+        } else if([formatKeys.orderedListItem, formatKeys.unorderedListItem, formatKeys.checkableListItem].includes(formatType)) {
+            nextEditorState = RichUtils.toggleBlockType(nextEditorState, formatType)
         } else {
             nextEditorState = RichUtils.toggleInlineStyle(nextEditorState, formatType.toUpperCase());
         }
