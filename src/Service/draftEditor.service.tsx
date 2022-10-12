@@ -20,6 +20,9 @@ export interface IDraftElementFormats {
     backgroundColor?: string;
     justifyContent?: string;
     strikeThrough?: boolean; 
+    orderedListItem?:  string;
+    unorderedListItem?: string;
+    checkableListItem?: string;
     link?: {
         url: string;
         text?: string;
