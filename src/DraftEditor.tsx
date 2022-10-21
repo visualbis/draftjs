@@ -323,6 +323,8 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
 
             // Apply selection
             nextEditorState = RichUtils.toggleLink(nextEditorState, nextEditorState.getSelection(), entityKey);
+        } else if([formatKeys.orderedListItem, formatKeys.unorderedListItem, formatKeys.checkableListItem].includes(formatType)) {
+            nextEditorState = RichUtils.toggleBlockType(nextEditorState, formatType)
         } else {
             nextEditorState = RichUtils.toggleInlineStyle(nextEditorState, formatType.toUpperCase());
         }
@@ -441,10 +443,10 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
             : { MentionSuggestions: null };
         const mentionPlugin_PREFIX_TWO = showMention.value
             ? createMentionPlugin({
-                  mentionTrigger: [MENTION_SUGGESTION_NAME.PREFIX_TWO, '.'],
+                  mentionTrigger: [MENTION_SUGGESTION_NAME.PREFIX_TWO],
                   supportWhitespace: true,
                   entityMutability: 'IMMUTABLE',
-                  mentionRegExp: '.',
+                  mentionRegExp: '.',                
               })
             : { MentionSuggestions: null };
 
