@@ -196,18 +196,14 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         return 'not-handled';
     };
 
-    UNSAFE_componentWillReceiveProps(newProps) {
-        const { initialContent } = this.props;
-        if (newProps.initialContent === '') {
-            this.setState({
+    static getDerivedStateFromProps(nextProps) {
+        if (nextProps.initialContent === '') {
+            return {
                 editorState: EditorState.createWithContent(convertFromHTMLString('')),
-            });
-        } else if(newProps.initialContent !== initialContent) {
-            this.setState({
-                editorState: EditorState.createWithContent(convertFromHTMLString(newProps.initialContent)),
-            });
+            }
         }
     }
+
 
     sendFormat = (nextEditorState: EditorState) => {
         const { format: prevFormat } = this.state;
