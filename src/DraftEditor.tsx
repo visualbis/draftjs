@@ -197,9 +197,14 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
     };
 
     UNSAFE_componentWillReceiveProps(newProps) {
+        const { initialContent } = this.props;
         if (newProps.initialContent === '') {
             this.setState({
                 editorState: EditorState.createWithContent(convertFromHTMLString('')),
+            });
+        } else if(newProps.initialContent !== initialContent) {
+            this.setState({
+                editorState: EditorState.createWithContent(convertFromHTMLString(newProps.initialContent)),
             });
         }
     }
