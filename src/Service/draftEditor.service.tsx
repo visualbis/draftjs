@@ -266,7 +266,7 @@ const convertToHTMLString = (
                     </span>
                 );
             } else if (entity.type === '#mention') {
-                const key = entity.data.mention?.key?.match(/#\[(.*?)\]/g) ? entity.data.mention?.key : `#[${entity.data.mention?.key}]`; // Migration changes 
+                const key = (entity.data.mention.formula || entity.data.mention?.key?.match(/#\[(.*?)\]/g)) ? entity.data.mention?.key : `#[${entity.data.mention?.key}]`; // Migration changes 
                 return (
                     <span
                         className="hash-mention"
