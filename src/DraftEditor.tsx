@@ -211,7 +211,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         const format = getFormat(nextEditorState);
         onCurrentFormatChange?.(format);
         return {
-            ...prevFormat,
+            // ...prevFormat,
             ...format,
         };
     };
