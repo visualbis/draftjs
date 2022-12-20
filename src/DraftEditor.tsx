@@ -814,7 +814,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
             valueSuggestion,
             ValuePopOverProps,
             onValueMentionInput,
-            mentionWidth: { people = 220, value = 120 },
+            mentionWidth = { people: 220, value: 120 },
         } = this.props;
         const { editorState, peopleSearchOpen, valueSearchOpen, suggestions, format } = this.state;
         const MentionComp = this.mentionSuggestionList?.MentionSuggestions;
@@ -831,7 +831,9 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
               })
             : SuggestionList;
 
-        const PopOverContainerMention = ValuePopOverProps ? ValuePopOverProps : PopOverContainerFun(value, false);
+        const PopOverContainerMention = ValuePopOverProps
+            ? ValuePopOverProps
+            : PopOverContainerFun(mentionWidth.value, false);
         const valueSuggestionList = onValueMentionInput ? valueSuggestion : suggestions;
         const setFormat = this.setFormat;
         // decorator for link only works when its passed from `decorator` prop.
@@ -896,7 +898,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
                         suggestions={peopleSuggestion || []}
                         onSearchChange={this.onSearchChange}
                         entryComponent={SuggestionList}
-                        popoverContainer={PopOverContainerFun(people, true)}
+                        popoverContainer={PopOverContainerFun(mentionWidth.people, true)}
                     />
                 )}
                 {ValueMentionComp && (
