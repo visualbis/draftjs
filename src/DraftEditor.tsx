@@ -133,6 +133,9 @@ const PopOverContainerFun = (width, isPeopleMention) => PopOverContainer({ width
 
 class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
     private mentionSuggestionList: any;
+    private peoplePopOverContainer: any;
+    private valuePopOverContainer: any;
+
     public editorRef: React.RefObject<Editor>;
     private plugins: any[];
     observer: MutationObserver;
@@ -141,7 +144,8 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         const { showMention, disableLinkify = false } = props;
         this.mentionSuggestionList = null;
         this.editorRef = React.createRef();
-
+        this.peoplePopOverContainer = null;
+        this.valuePopOverContainer = null;
         this.state = {
             editorState: this.getInitialState(),
             format: null,
@@ -254,12 +258,17 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
     };
 
     componentDidMount() {
+        const { mentionWidth = { people: 220, value: 120 } } = this.props;
         let container = document.body.getElementsByClassName('mention-list-container')[0];
         if (!container) {
             container = document.createElement('div');
             container.className = 'mention-list-container';
             document.body.appendChild(container);
         }
+
+        this.peoplePopOverContainer = PopOverContainerFun(mentionWidth.people, true);
+        this.valuePopOverContainer = PopOverContainerFun(mentionWidth.value, true);
+
         setTimeout(() => {
             const { shouldFocusOnMount, onFocus } = this.props;
             const { editorState } = this.state;
@@ -831,9 +840,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
               })
             : SuggestionList;
 
-        const PopOverContainerMention = ValuePopOverProps
-            ? ValuePopOverProps
-            : PopOverContainerFun(mentionWidth.value, false);
+        const PopOverContainerMention = ValuePopOverProps ? ValuePopOverProps : this.valuePopOverContainer;
         const valueSuggestionList = onValueMentionInput ? valueSuggestion : suggestions;
         const setFormat = this.setFormat;
         // decorator for link only works when its passed from `decorator` prop.
@@ -898,7 +905,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
                         suggestions={peopleSuggestion || []}
                         onSearchChange={this.onSearchChange}
                         entryComponent={SuggestionList}
-                        popoverContainer={PopOverContainerFun(mentionWidth.people, true)}
+                        popoverContainer={this.peoplePopOverContainer}
                     />
                 )}
                 {ValueMentionComp && (
