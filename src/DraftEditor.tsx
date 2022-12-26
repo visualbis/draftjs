@@ -853,6 +853,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
                         currentFormat: format,
                         setFormat: this.setFormat,
                         removeLink: this.removeLink,
+                        selectAll: this.selectAll,
                     })}
                 <Editor
                     ref={this.editorRef}
