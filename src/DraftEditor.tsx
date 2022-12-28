@@ -459,7 +459,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
                   mentionTrigger: [MENTION_SUGGESTION_NAME.PREFIX_TWO],
                   supportWhitespace: true,
                   entityMutability: 'IMMUTABLE',
-                  mentionRegExp: '.',
+                  mentionRegExp: '.',                
               })
             : { MentionSuggestions: null };
 
@@ -534,6 +534,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
                     const string = `${(isParent ? mention.parent : []).join('.')}${isParent ? '.' : ''}${
                         mention.label
                     }.`;
+
                     this.setState({ searchString: string });
                     this.onMouseDownMention(mention, searchString);
                     return 'handled';
