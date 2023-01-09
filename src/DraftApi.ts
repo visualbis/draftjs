@@ -17,7 +17,7 @@ export default class DraftApi {
     static getFormattedValue = (text: string) => {
         const contentState = EditorState.createWithContent(convertFromHTMLString(text));
         const rawData = convertToRaw(contentState.getCurrentContent());
-        const value = rawData.blocks.map((block) => (!block.text.trim() && '\n') || block.text).join('\n');
+        const value = rawData.blocks.map((block) => (!block.text?.trim() && '\n') || block.text).join('\n');
         return value;
     };
 
