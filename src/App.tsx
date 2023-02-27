@@ -52,10 +52,12 @@ export const App = () => {
                     showMention={{ value: true, people: false }}
                 />
             </div>
-            <div>HTML Content:</div>
+            {/* DO NOT COMMIT WITH BELOW CODE UNCOMMENTED DUE TO CERTIFICATION ISSUES */}
+
+            {/* <div>HTML Content:</div>
             <div style={{ border: '1px solid' }}>
-                <div dangerouslySetInnerHTML={{ __html: content }}></div>
-            </div>
+            <div dangerouslySetInnerHTML={{ __html: content }}></div>
+            </div> */}
         </>
         // CustomMentionEditor()
     );
