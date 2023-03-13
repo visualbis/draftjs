@@ -459,7 +459,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
                   mentionTrigger: [MENTION_SUGGESTION_NAME.PREFIX_TWO],
                   supportWhitespace: true,
                   entityMutability: 'IMMUTABLE',
-                  mentionRegExp: '.',                
+                  mentionRegExp: '.',
               })
             : { MentionSuggestions: null };
 
@@ -789,12 +789,12 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
             length = string.length;
         }
         if (!mention.hasLeaf) {
-            const data = getMentionDataById(mention.id);
+            const data = mention.isKpiMention ? mention : getMentionDataById(mention.id);
 
             this.insertEntityAtCursor(
                 data,
                 parsedValueMentionRequired ? data.value : data.title,
-                '#mention',
+                mention.isKpiMention ? 'mention' : '#mention',
                 length + 1,
             );
             onValueMentionInput('');
