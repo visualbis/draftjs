@@ -855,6 +855,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
                         setFormat: this.setFormat,
                         removeLink: this.removeLink,
                         selectAll: this.selectAll,
+                        hasSelection: !!this.getSelection().length && editorState.getSelection().getHasFocus(),
                     })}
                 <Editor
                     ref={this.editorRef}
