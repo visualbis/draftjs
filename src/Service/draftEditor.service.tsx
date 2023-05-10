@@ -115,7 +115,7 @@ const formatText = (editorState: EditorState, formatType: string, value: string)
     if (!currentStyle.has(value)) {
         nextEditorState = RichUtils.toggleInlineStyle(nextEditorState, value);
     }
-    return moveColorToTop(nextEditorState);
+    return nextEditorState;
 };
 
 const moveColorToTop = (editorState: EditorState) => {
