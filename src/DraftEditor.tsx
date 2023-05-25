@@ -891,6 +891,8 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
                                     onOverrideContent: externalProps.onOverrideContent,
                                     externalProps,
                                     removeLink: this.removeLink,
+                                    hasSelection:
+                                        !!this.getSelection().length && editorState.getSelection().getHasFocus(),
                                 })}
                             </>
                         )}
