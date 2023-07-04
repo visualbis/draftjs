@@ -29,16 +29,17 @@ export default class SuggestionList extends React.Component<EntryComponentProps>
         return (
             <div {...parentProps} className={`list_container_item ${isFocused ? 'focused' : ''}`}>
                 <div className={`${theme?.mentionSuggestionsEntryContainer} ${'list_item'}`}>
-                    {mention.avatar && (
-                        <div className={`${theme?.mentionSuggestionsEntryContainerLeft} ${'list_icon'}`}>
+                    <div className={`${theme?.mentionSuggestionsEntryContainerLeft} ${'list_icon'}`}>
+                        {mention.avatar !== 'NA' ? (
                             <img
                                 src={mention.avatar}
                                 className={theme?.mentionSuggestionsEntryAvatar}
                                 role="presentation"
                             />
-                        </div>
-                    )}
-
+                        ) : (
+                            <div className="list-text">{mention.initial}</div>
+                        )}
+                    </div>
                     <div className={theme?.mentionSuggestionsEntryContainerRight} title={mention.label}>
                         <div className={`${theme?.mentionSuggestionsEntryTitle} ${'list-title'}`}>{mention.label}</div>
 
