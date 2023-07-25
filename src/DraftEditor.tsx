@@ -206,6 +206,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
                 editorState: EditorState.createWithContent(convertFromHTMLString('')),
             };
         }
+        return null;
     }
 
     sendFormat = (nextEditorState: EditorState) => {
