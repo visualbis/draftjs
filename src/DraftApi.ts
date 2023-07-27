@@ -10,7 +10,17 @@ export default class DraftApi {
     static addFormatToText = (htmlString: string, formatType: TFormatSting, formatValue?: any) => {
         let editorState = EditorState.createWithContent(convertFromHTMLString(htmlString));
         editorState = selectAll(editorState);
-        editorState = RichUtils.toggleInlineStyle(editorState, formatType.toUpperCase());
+        const currentSelection = editorState.getSelection();
+        const contentState = editorState.getCurrentContent();
+        const startkey = currentSelection.getStartKey();
+        const startOffset = currentSelection.getStartOffset();
+        const blockWithSelection = contentState.getBlockForKey(startkey);
+        const inlineStyles = blockWithSelection.getInlineStyleAt(startOffset);
+        const applyFormat = formatValue && !inlineStyles.has(formatType.toUpperCase());
+        const removeFormat = !formatValue && inlineStyles.has(formatType.toUpperCase());
+        if (applyFormat || removeFormat) {
+            editorState = RichUtils.toggleInlineStyle(editorState, formatType.toUpperCase());
+        }
         return convertToHTMLString(editorState);
     };
 
