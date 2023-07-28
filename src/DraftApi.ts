@@ -16,8 +16,9 @@ export default class DraftApi {
         const startOffset = currentSelection.getStartOffset();
         const blockWithSelection = contentState.getBlockForKey(startkey);
         const inlineStyles = blockWithSelection.getInlineStyleAt(startOffset);
-        const applyFormat = formatValue && !inlineStyles.has(formatType.toUpperCase());
-        const removeFormat = !formatValue && inlineStyles.has(formatType.toUpperCase());
+        const hasFormat = inlineStyles.has(formatType.toUpperCase());
+        const applyFormat = formatValue && !hasFormat;
+        const removeFormat = !formatValue && hasFormat;
         if (applyFormat || removeFormat) {
             editorState = RichUtils.toggleInlineStyle(editorState, formatType.toUpperCase());
         }
