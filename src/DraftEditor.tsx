@@ -74,6 +74,7 @@ export interface IDraftEditorProps {
     useBlockConversion?: boolean;
     parsedValueMentionRequired?: boolean;
     mentionWidth?: { people: number; value?: number };
+    onTab?: (e: React.KeyboardEvent<{}>) => void;
 }
 
 export interface IContentTextChangeProps {
@@ -526,6 +527,8 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
 
     onTab = (e: React.KeyboardEvent<{}>) => {
         const { valueSearchOpen, searchString } = this.state;
+        const { onTab } = this.props;
+        if (onTab) onTab(e);
         if (valueSearchOpen) {
             if (e.key === 'Tab') {
                 const value = (document.querySelector('.value-mention-item-focused') as HTMLElement)?.dataset.value;
