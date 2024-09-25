@@ -19,6 +19,9 @@ export const formatKeys = {
     justifyContent: 'justify-content',
     strikethrough: 'strikethrough',
     textAlign: 'text-align',
+    orderedListItem: 'ordered-list-item',
+    unorderedListItem: 'unordered-list-item',
+    checkableListItem:"checkable-list-item"
 };
 
 export const styleValues = [

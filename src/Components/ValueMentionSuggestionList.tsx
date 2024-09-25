@@ -1,5 +1,5 @@
-import { MentionData, MentionPluginTheme } from '@draft-js-plugins/mention';
-import React, { MouseEvent } from 'react';
+import { MentionData } from '@lumel/mention';
+import React from 'react';
 import '../Styles';
 import { EntryComponentProps } from './SuggestionList';
 
@@ -38,21 +38,25 @@ const SuggestionListComp = (listProps: IListProps) =>
             const {
                 mention,
                 theme,
+                isFocused,
                 searchValue, // eslint-disable-line @typescript-eslint/no-unused-vars
-                isFocused, // eslint-disable-line @typescript-eslint/no-unused-vars
                 ...parentProps
             } = this.props;
-
             const newProps = {
                 className: parentProps.className,
                 role: parentProps.role,
                 id: parentProps.id,
+                onMouseEnter: parentProps.onMouseEnter,
                 onMouseDown: () => listProps.onmousedown(mention, searchValue),
-                onKeyDown: (e) => {},
-            };
-
+            }; 
+            const labelStyle: React.CSSProperties = !mention.hasLeaf  ?  { width: '92px'} :  null; 
             return (
-                <div {...newProps} className={`list_container_item ${isFocused ? 'focused' : ''}`}>
+                <div
+                    {...newProps}
+                    data-value={JSON.stringify(mention)}
+                    className={` value-mention-item-${isFocused ? 'focused' : ''} list_container_item ${isFocused ? 'focused' : ''
+                        }`}
+                >
                     <div className={`${theme?.mentionSuggestionsEntryContainer} ${'list_item'}`}>
                         <div className="value-mention-title-container">
                             {!mention.hasLeaf && (
@@ -63,6 +67,7 @@ const SuggestionListComp = (listProps: IListProps) =>
                             <div
                                 title={mention.label}
                                 className={`${theme?.mentionSuggestionsEntryTitle} ${'list-title'}`}
+                                style={labelStyle} 
                             >
                                 {mention.label}
                             </div>
