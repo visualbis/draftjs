@@ -29,6 +29,7 @@ import {
 } from './Service/draftEditor.service';
 import { CUSTOM_STYLE_MAP, formatKeys, MENTION_SUGGESTION_NAME } from './Service/UIconstants';
 import './Styles';
+import getFragmentFromSelection from 'draft-js/lib/getFragmentFromSelection';
 
 interface IDraftEditorProps {
     initialContent?: string;
@@ -172,15 +173,8 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
 
     getSelection = (editor?: EditorState) => {
         let editorState = editor ?? this.state.editorState;
-        const selection = editorState.getSelection();
-        const anchorKey = selection.getAnchorKey();
-        const currentContent = editorState.getCurrentContent();
-        const currentBlock = currentContent.getBlockForKey(anchorKey);
-
-        const start = selection.getStartOffset();
-        const end = selection.getEndOffset();
-        const selectedText = currentBlock.getText().slice(start, end);
-        return selectedText;
+        const selected = getFragmentFromSelection(editorState);
+        return selected ? selected.map((x) => x.getText()).join('\n') : '';
     };
     moveSelectionToEnd = (editorState) => {
         const content = editorState.getCurrentContent();
@@ -222,7 +216,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
     }
 
     setFormat = (formatType: string, value: string) => {
-        /* ** DO NOT MOVE THE FOCUS BELOW AS ITS RESETTING 
+        /* ** DO NOT MOVE THE FOCUS BELOW AS ITS RESETTING
         THE STATE BY CALLING EDITOR STATE CHANGE
         AND RERENDERING THE ENTIRE COMPONENNT ** */
 
@@ -467,11 +461,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         const currentContent = editorState.getCurrentContent();
         let currentSelection = editorState.getSelection();
         if (!replaceSelection) {
-            const nextOffSet = currentSelection.getFocusOffset();
-            currentSelection = currentSelection.merge({
-                focusOffset: nextOffSet,
-                anchorOffset: nextOffSet - offset,
-            });
+            currentSelection = this.moveCursorToEndOfSelection(currentSelection, offset);
         }
         let newContent = Modifier.replaceText(currentContent, currentSelection, textToInsert);
         const newContentSelection = newContent.getSelectionAfter();
@@ -529,11 +519,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         const entityKey = stateWithEntity.getLastCreatedEntityKey();
         let currentSelection = editorState.getSelection();
         if (!replaceSelection) {
-            const nextOffSet = currentSelection.getFocusOffset();
-            currentSelection = currentSelection.merge({
-                focusOffset: nextOffSet,
-                anchorOffset: nextOffSet - offset,
-            });
+            currentSelection = this.moveCursorToEndOfSelection(currentSelection, offset);
         }
         const stateWithText = Modifier.replaceText(stateWithEntity, currentSelection, key, null, entityKey);
         this.updateData(EditorState.push(editorState, stateWithText, 'insert-fragment'));
@@ -574,6 +560,18 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         const nextEditorState = RichUtils.toggleBlockType(editorState, newStyle);
         return nextEditorState;
     };
+
+    private moveCursorToEndOfSelection(currentSelection: SelectionState, offset: number) {
+        const nextOffSet = currentSelection.getFocusOffset();
+        const focusKey = currentSelection.getFocusKey();
+        currentSelection = currentSelection.merge({
+            focusOffset: nextOffSet,
+            anchorOffset: nextOffSet - offset,
+            anchorKey: focusKey,
+            focusKey: focusKey,
+        });
+        return currentSelection;
+    }
 
     blockStyleFn(block) {
         switch (block.getType()) {
