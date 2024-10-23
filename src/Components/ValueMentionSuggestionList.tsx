@@ -42,20 +42,22 @@ const SuggestionListComp = (listProps: IListProps) =>
                 searchValue, // eslint-disable-line @typescript-eslint/no-unused-vars
                 ...parentProps
             } = this.props;
+            const isMentionItemActive = parentProps['aria-selected'];
             const newProps = {
                 className: parentProps.className,
                 role: parentProps.role,
                 id: parentProps.id,
                 onMouseEnter: parentProps.onMouseEnter,
                 onMouseDown: () => listProps.onmousedown(mention, searchValue),
-            }; 
-            const labelStyle: React.CSSProperties = !mention.hasLeaf  ?  { width: '92px'} :  null; 
+            };
+            const labelStyle: React.CSSProperties = !mention.hasLeaf ? { width: '92px' } : null;
             return (
                 <div
                     {...newProps}
                     data-value={JSON.stringify(mention)}
-                    className={` value-mention-item-${isFocused ? 'focused' : ''} list_container_item ${isFocused ? 'focused' : ''
-                        }`}
+                    className={` value-mention-item-${isFocused ? 'focused' : ''} list_container_item ${
+                        isFocused ? 'focused' : ''
+                    } ${isMentionItemActive ? 'mention-item-active' : ''}`}
                 >
                     <div className={`${theme?.mentionSuggestionsEntryContainer} ${'list_item'}`}>
                         <div className="value-mention-title-container">
@@ -67,7 +69,7 @@ const SuggestionListComp = (listProps: IListProps) =>
                             <div
                                 title={mention.label}
                                 className={`${theme?.mentionSuggestionsEntryTitle} ${'list-title'}`}
-                                style={labelStyle} 
+                                style={labelStyle}
                             >
                                 {mention.label}
                             </div>

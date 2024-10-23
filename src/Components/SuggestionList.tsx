@@ -25,9 +25,15 @@ export default class SuggestionList extends React.Component<EntryComponentProps>
             isFocused, // eslint-disable-line @typescript-eslint/no-unused-vars
             ...parentProps
         } = this.props;
+        const isMentionItemActive = parentProps['aria-selected'];
 
         return (
-            <div {...parentProps} className={`list_container_item ${isFocused ? 'focused' : ''}`}>
+            <div
+                {...parentProps}
+                className={`list_container_item ${isFocused ? 'focused' : ''} ${
+                    isMentionItemActive ? 'mention-item-active' : ''
+                }`}
+            >
                 <div className={`${theme?.mentionSuggestionsEntryContainer} ${'list_item'}`}>
                     <div className={`${theme?.mentionSuggestionsEntryContainerLeft} ${'list_icon'}`}>
                         {mention.avatar !== 'NA' ? (

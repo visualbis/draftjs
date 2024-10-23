@@ -76,6 +76,7 @@ export interface IDraftEditorProps {
     parsedValueMentionRequired?: boolean;
     mentionWidth?: { people: number; value?: number };
     onTab?: (e: React.KeyboardEvent<{}>) => void;
+    mentionArrowNavigation?: boolean;
 }
 
 export interface IContentTextChangeProps {
@@ -826,15 +827,15 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
             valueSuggestion,
             ValuePopOverProps,
             onValueMentionInput,
+            mentionArrowNavigation,
             mentionWidth = { people: 220, value: 120 },
         } = this.props;
         const { editorState, peopleSearchOpen, valueSearchOpen, suggestions, format } = this.state;
         const MentionComp = this.mentionSuggestionList?.MentionSuggestions;
         const ValueMentionComp = this.mentionSuggestionList?.ValueSuggestion;
-        const isKeyEventNotAllowed = peopleSearchOpen || valueSearchOpen;
-        const keyBindingFn = (isKeyEventNotAllowed
-            ? undefined
-            : this.props.customKeyBinder ?? this.keyBindingFn) as unknown as (
+        const isMentionOpen = peopleSearchOpen || valueSearchOpen;
+        const hasArrowNavigation = isMentionOpen && mentionArrowNavigation;
+        let keyBindingFn = (isMentionOpen ? undefined : this.props.customKeyBinder ?? this.keyBindingFn) as unknown as (
             event: React.KeyboardEvent<Element>,
         ) => string;
         const SuggestionListComp = onValueMentionInput
@@ -848,6 +849,9 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
         const setFormat = this.setFormat;
         // decorator for link only works when its passed from `decorator` prop.
         const decorators = this.props.linkDecorator ? [this.props.linkDecorator] : [];
+        const otherProps = hasArrowNavigation
+            ? {}
+            : { keyBindingFn, onTab: this.onTab, handleReturn: this.handleReturn };
         return (
             <Fragment>
                 {!inplaceToolbar &&
@@ -861,6 +865,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
                     })}
                 <Editor
                     ref={this.editorRef}
+                    {...otherProps}
                     customStyleFn={resolveCustomStyleMap}
                     preserveSelectionOnBlur
                     stripPastedStyles
@@ -871,10 +876,7 @@ class DraftEditor extends Component<IDraftEditorProps, IDraftEditorState> {
                     textAlignment={textAlignment as any}
                     handleKeyCommand={this.handleKeyCommand}
                     customStyleMap={CUSTOM_STYLE_MAP}
-                    onTab={this.onTab}
                     plugins={this.plugins}
-                    handleReturn={this.handleReturn}
-                    keyBindingFn={keyBindingFn}
                     readOnly={readOnly}
                     onFocus={onFocus}
                     onBlur={onBlur}
